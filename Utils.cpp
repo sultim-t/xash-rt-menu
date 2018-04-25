@@ -270,30 +270,6 @@ const char *Info_ValueForKey( const char *s, const char *key )
 	}
 }
 
-
-/* 
-===================
-Key_GetKey
-===================
-*/
-int KEY_GetKey( const char *binding )
-{
-	const char *b;
-
-	if ( !binding )
-		return -1;
-
-	for ( int i = 0; i < 256; i++ )
-	{
-		b = EngFuncs::KEY_GetBinding( i );
-		if( !b ) continue;
-
-		if( !stricmp( binding, b ))
-			return i;
-	}
-	return -1;
-}
-
 /*
 ================
 UI_FadeAlpha

@@ -23,6 +23,9 @@
 cmake_minimum_required(VERSION  2.8.0)
 project (MAINUI)
 
+if(MAINUI_APPLICATION_MODE)
+	set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+endif()
 include(FWGSLib)
 
 # By default we require C++11 support.
@@ -35,102 +38,38 @@ fwgs_fix_default_msvc_settings()
 option(MAINUI_USE_CUSTOM_FONT_RENDER "Use custom font rendering" ON)
 option(MAINUI_USE_STB "Use stb_truetype.h for rendering(*nix-only)" OFF)
 option(MAINUI_RENDER_PICBUTTON_TEXT "Use custom font render to render picbuttons(experimental)" OFF)
+option(MAINUI_APPLICATION_MODE "Build mainui_cpp as an application, without engine" OFF)
 
-set(MAINUI_CONTROLS_SOURCES
-	controls/Framework.cpp
-	controls/BaseItem.cpp
-	controls/Action.cpp
-	controls/Bitmap.cpp
-	controls/CheckBox.cpp
-	controls/ItemsHolder.cpp
-	controls/Field.cpp
-	controls/PicButton.cpp
-	controls/Slider.cpp
-	controls/SpinControl.cpp
-	controls/YesNoMessageBox.cpp
-	controls/MessageBox.cpp
-	controls/Editable.cpp
-	controls/Switch.cpp
-	controls/BaseWindow.cpp
-	controls/ProgressBar.cpp
-	controls/BackgroundBitmap.cpp
-	controls/Table.cpp
-	controls/TabView.cpp
-	controls/PlayerModelView.cpp
-	#controls/VideoPlayer.cpp
-	# controls/ScrollView.cpp
-)
+file(GLOB MAINUI_SOURCES *.cpp font/*.cpp controls/*.cpp) # Common sources for both engine and appmode
+include_directories(. controls/ menus/ utl/ font/ model/) # Common includes for both engine and appmode
 
-set(MAINUI_MENUS_SOURCES
-	menus/AdvancedControls.cpp
-	menus/Audio.cpp
-	menus/Configuration.cpp
-	menus/Controls.cpp
-	menus/CreateGame.cpp
-	menus/Credits.cpp
-	menus/CustomGame.cpp
-	menus/FileDialog.cpp
-	menus/GameOptions.cpp
-	menus/Gamepad.cpp
-	menus/InputDevices.cpp
-	menus/LoadGame.cpp
-	menus/Main.cpp
-	menus/Multiplayer.cpp
-	menus/NewGame.cpp
-	menus/PlayerSetup.cpp
-	menus/SaveLoad.cpp
-	menus/ServerBrowser.cpp
-	menus/TouchButtons.cpp
-	menus/Touch.cpp
-	menus/TouchEdit.cpp
-	menus/TouchOptions.cpp
-	menus/Video.cpp
-	menus/VideoModes.cpp
-	menus/VideoOptions.cpp
-	menus/PlayerIntroduceDialog.cpp
-	# menus/Zoo.cpp
-	menus/ConnectionProgress.cpp
-	menus/ConnectionWarning.cpp
-	menus/dynamic/ScriptMenu.cpp
-)
-
-set(MAINUI_FONT_RENDER_SOURCES
-	font/WinAPIFont.cpp
-	font/BitmapFont.cpp
-	font/FontManager.cpp
-	font/FreeTypeFont.cpp
-	font/StbFont.cpp
-	font/BaseFontBackend.cpp
-)
-
-set(MAINUI_SOURCES
-	EventSystem.cpp
-	EngineCallback.cpp
-	BaseMenu.cpp
-	Btns.cpp
-	Color.cpp
-	MenuStrings.cpp
-	CFGScript.cpp
-	Utils.cpp
-	Scissor.cpp
-	udll_int.cpp
-)
-
-list(APPEND MAINUI_SOURCES ${MAINUI_CONTROLS_SOURCES})
-list(APPEND MAINUI_SOURCES ${MAINUI_MENUS_SOURCES})
-list(APPEND MAINUI_SOURCES ${MAINUI_FONT_RENDER_SOURCES})
-add_library (${MAINUI_LIBRARY} SHARED ${MAINUI_SOURCES})
-
-if(NOT WIN32 AND NOT MINGW)
-	fwgs_add_compile_options(C -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable)
+if(MAINUI_APPLICATION_MODE)
+	include_directories(appmode) # appmode only includes
+	
+	file(GLOB MAINUI_APP_MODE_SOURCES appmode/*.cpp) # appmode only sources
+	
+	list(APPEND MAINUI_SOURCES ${MAINUI_APP_MODE_SOURCES})
+	add_definitions(-DMAINUI_APPLICATION_MODE)
+	add_executable(${MAINUI_LIBRARY} ${MAINUI_SOURCES})
+	xash_link_sdl2(${MAINUI_LIBRARY})
 else()
-
-	# Only for MSVC6 compability mode! Newer VC does fail with this define
-	# add_definitions(-DMY_COMPILER_SUCKS)
+	if(NOT XASH_SDK)
+		set(XASH_SDK "../")
+	endif()
+	include_directories(${XASH_SDK}/common ${XASH_SDK}/engine gamemode/) # gamemode only sources
+	
+	file(GLOB MAINUI_GAME_MODE_SOURCES gamemode/*.cpp gamemode/controls/*.cpp gamemode/menus/*.cpp) # gamemode only sources
+	
+	list(APPEND MAINUI_SOURCES ${MAINUI_GAME_MODE_SOURCES})
+	add_definitions(-DMAINUI_GAME_MODE)
+	add_library(${MAINUI_LIBRARY} SHARED ${MAINUI_SOURCES})
 endif()
 
-if(NOT XASH_SDK)
-	set(XASH_SDK "../")
+if(NOT WIN32 AND NOT MINGW)
+	fwgs_add_compile_options(C -Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -std=c++11)
+else()
+	# Only for MSVC6 compability mode! Newer VC does fail with this define
+	# add_definitions(-DMY_COMPILER_SUCKS)
 endif()
 
 # Force stb_truetype for Apple devices, as there is no Apple native font renderer
@@ -138,8 +77,6 @@ endif()
 if(APPLE)
 	set(MAINUI_USE_STB TRUE)
 endif()
-
-include_directories(${XASH_SDK}/common ${XASH_SDK}/engine ${XASH_SDK}/pm_shared . controls/ menus/ utl/ font/ model/)
 
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS)

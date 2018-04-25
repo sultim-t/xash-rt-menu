@@ -18,13 +18,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-
-
-// ui_menu.c -- main menu interface
-#define OEMRESOURCE		// for OCR_* cursor junk
-
-
-
 #include "extdll_menu.h"
 #include "BaseMenu.h"
 #include "PicButton.h"
@@ -32,8 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Utils.h"
 #include "BtnsBMPTable.h"
 #include "YesNoMessageBox.h"
-#include "ConnectionProgress.h"
-#include "ConnectionWarning.h"
 #include "BackgroundBitmap.h"
 #include "con_nprint.h"
 #include "FontManager.h"
@@ -1494,22 +1485,14 @@ void UI_Init( void )
 	EngFuncs::Cmd_AddCommand( "menu_gamepad", UI_GamePad_Menu );
 	EngFuncs::Cmd_AddCommand( "menu_resetping", UI_MenuResetPing_f );
 	EngFuncs::Cmd_AddCommand( "menu_showmessagebox", CMenuYesNoMessageBox::UI_ShowMessageBox );
-	EngFuncs::Cmd_AddCommand( "menu_connectionprogress", UI_ConnectionProgress_f );
-	EngFuncs::Cmd_AddCommand( "menu_connectionwarning", UI_ConnectionWarning_f );
+
+	Mode_Init();
 
 	// EngFuncs::Cmd_AddCommand( "menu_zoo", UI_Zoo_Menu );
 	EngFuncs::CreateMapsList( TRUE );
 
 	uiStatic.initialized = true;
-
-	// can be hijacked, but please, don't do it
-	const char *version = EngFuncs::GetCvarString( "host_ver" );
-
-	uiStatic.isForkedEngine = version && version[0];
-
-	// setup game info
-	EngFuncs::GetGameInfo( &gMenu.m_gameinfo );
-
+	
 	// load custom strings
 	UI_LoadCustomStrings();
 

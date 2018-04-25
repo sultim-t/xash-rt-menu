@@ -19,6 +19,7 @@ GNU General Public License for more details.
 #define ENGINECALLBACKS_H
 
 #include "extdll_menu.h"
+#include "menu_int.h"
 #include "Primitive.h"
 #include "netadr.h"
 

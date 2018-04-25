@@ -83,6 +83,4 @@ typedef int BOOL;
 typedef unsigned char byte;
 typedef unsigned int uint;
 
-#include "menu_int.h"
-
 #endif//EXTDLL_H

@@ -70,6 +70,44 @@ GNU General Public License for more details.
 // =====================================================================
 // Main menu interface
 
+class CMenu;
+
+class Menu
+{
+public:
+	Menu( void )
+	{
+		m_pMenuList = NULL;
+	}
+	
+	CMenu *m_pMenuList;
+	
+	// Game information
+	GAMEINFO		m_gameinfo;	
+};
+extern Menu g_Menu;
+
+class CMenu
+{
+public:
+	CMenu( const char *szCommand, void (*pfnInit)( void ), void (*pfnPrecache)( void ) )
+	{
+		m_szCommand = szCommand;
+		m_pfnInit = pfnInit;
+		m_pfnPrecache = pfnPrecache;
+		m_pNext = g_Menu.m_pMenuList;
+		g_Menu.m_pMenuList = this;
+	}
+	
+	const char *m_szCommand;
+	void (*m_pfnInit)( void );
+	void (*m_pfnPrecache) ( void );
+	CMenu *m_pNext;
+}
+
+#define ADD_NEW_MENU( command, init, precache ) \
+	static CMenu command( STRINGIZE(command), (init), (precache) )
+
 extern cvar_t	*ui_precache;
 extern cvar_t	*ui_showmodels;
 extern cvar_t   *ui_show_window_stack;
@@ -173,6 +211,7 @@ extern int	uiColorDkGrey;
 extern int	uiColorBlack;
 
 // TODO: Move it under namespace?
+void Mode_Init( void );
 
 bool UI_IsXashFWGS( void );
 
@@ -325,12 +364,6 @@ double Sys_DoubleTime( void );
 //
 //-----------------------------------------------------
 //
-class CMenu
-{
-public:
-	// Game information
-	GAMEINFO		m_gameinfo;
-};
 
 typedef struct
 {
@@ -343,7 +376,5 @@ typedef struct
 } uiFileDialogGlobal_t;
 
 extern uiFileDialogGlobal_t uiFileDialogGlobal;
-
-extern CMenu gMenu;
 
 #endif // BASEMENU_H
