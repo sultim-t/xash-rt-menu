@@ -105,6 +105,10 @@ private:
 		int ch;
 		HIMAGE texture;
 		wrect_t rect;
+		friend bool operator < (const glyph_t &a, const glyph_t &b)
+		{
+			return a.ch < b.ch;
+		}
 	};
 
 	CUtlRBTree<glyph_t, int> m_glyphs;
