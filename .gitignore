@@ -33,9 +33,9 @@ Release/
 ipch/
 *.opensdf
 # Use CMake for generating projects
-*.vcxproj.filters
-*.vcxproj
-*.vcproj
+# *.vcxproj.filters
+# *.vcxproj
+# *.vcproj
 *.sln
 *.pdb
 
