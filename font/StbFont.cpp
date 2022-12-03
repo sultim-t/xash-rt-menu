@@ -220,7 +220,9 @@ bool CStbFont::FindFontDataFile(const char *name, int tall, int weight, int flag
 	return true;
 #elif defined _WIN32
 	if( !strcmp( name, "Arial" ) )
-		snprintf( dataFile, dataFileChars, "%s\\Fonts\\arial.ttf", getenv( "WINDIR" ) );
+        snprintf( dataFile, dataFileChars, "%s\\Fonts\\arial.ttf", getenv( "WINDIR" ) );
+    else if( !strcmp( name, "Consolas" ) )
+        snprintf( dataFile, dataFileChars, "%s\\Fonts\\consola.ttf", getenv( "WINDIR" ) );
 	else
 		snprintf( dataFile, dataFileChars, "%s\\Fonts\\trebucbd.ttf", getenv( "WINDIR" ) );
 	return true;
@@ -256,7 +258,7 @@ bool CStbFont::Create(const char *name, int tall, int weight, int blur, float br
 
 
 	// EngFuncs::COM_LoadFile does not allow open files from /
-	FILE *fd = fopen( m_szRealFontFile, "r" );
+	FILE *fd = fopen( m_szRealFontFile, "rb" );
 	if( !fd )
 	{
 		Con_DPrintf( "Unable to open font %s!\n", m_szRealFontFile );
