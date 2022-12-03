@@ -32,6 +32,7 @@ class CMenuNewGame : public CMenuFramework
 public:
 	CMenuNewGame() : CMenuFramework( "CMenuNewGame" ) { }
 	static void StartGameCb( float skill );
+	static void HazardCourseCb();
 	void Show() override
 	{
 		if( gMenu.m_gameinfo.flags & GFL_NOSKILLS )
@@ -45,13 +46,17 @@ public:
 private:
 	void _Init() override;
 
+	static void HazardCourseDialogCb( CMenuBaseItem *pSelf, void *pExtra );
 	static void ShowDialogCb( CMenuBaseItem *pSelf, void *pExtra  );
+
+	void TryAddHazardCourse();
 
 	CMenuYesNoMessageBox  msgBox;
 
 	CEventCallback easyCallback;
 	CEventCallback normCallback;
 	CEventCallback hardCallback;
+	CEventCallback hazardCourseCallback;
 };
 
 /*
@@ -81,7 +86,39 @@ void CMenuNewGame::ShowDialogCb( CMenuBaseItem *pSelf, void *pExtra )
 	CMenuNewGame *ui = (CMenuNewGame*)pSelf->Parent();
 
 	ui->msgBox.onPositive = *(CEventCallback*)pExtra;
+	ui->msgBox.SetMessage(L("StringsList_240"));
 	ui->msgBox.Show();
+}
+
+void CMenuNewGame::HazardCourseDialogCb( CMenuBaseItem *pSelf, void *pExtra )
+{
+	CMenuNewGame *ui = (CMenuNewGame *)pSelf->Parent();
+
+	ui->msgBox.onPositive = *(CEventCallback *)pExtra;
+	ui->msgBox.SetMessage(L("StringsList_234"));
+	ui->msgBox.Show();
+}
+
+/*
+=================
+UI_Main_HazardCourse
+=================
+*/
+void CMenuNewGame::HazardCourseCb()
+{
+	if (EngFuncs::GetCvarFloat("host_serverstate") && EngFuncs::GetCvarFloat("maxplayers") > 1)
+		EngFuncs::HostEndGame("end of the game");
+
+	EngFuncs::CvarSetValue("skill", 1.0f);
+	EngFuncs::CvarSetValue("deathmatch", 0.0f);
+	EngFuncs::CvarSetValue("teamplay", 0.0f);
+	EngFuncs::CvarSetValue("pausable", 1.0f); // singleplayer is always allowing pause
+	EngFuncs::CvarSetValue("coop", 0.0f);
+	EngFuncs::CvarSetValue("maxplayers", 1.0f); // singleplayer
+
+	EngFuncs::PlayBackgroundTrack(NULL, NULL);
+
+	EngFuncs::ClientCmd(FALSE, "hazardcourse\n");
 }
 
 /*
@@ -99,7 +136,9 @@ void CMenuNewGame::_Init( void )
 	SET_EVENT( easyCallback, CMenuNewGame::StartGameCb( 1.0f ) );
 	SET_EVENT( normCallback, CMenuNewGame::StartGameCb( 2.0f ) );
 	SET_EVENT( hardCallback, CMenuNewGame::StartGameCb( 3.0f ) );
-	
+
+	TryAddHazardCourse();
+
 	CMenuPicButton *easy = AddButton( L( "GameUI_Easy" ), L( "StringsList_200" ), PC_EASY, easyCallback, QMF_NOTIFY );
 	CMenuPicButton *norm = AddButton( L( "GameUI_Medium" ), L( "StringsList_201" ), PC_MEDIUM, normCallback, QMF_NOTIFY );
 	CMenuPicButton *hard = AddButton( L( "GameUI_Hard" ), L( "StringsList_202" ), PC_DIFFICULT, hardCallback, QMF_NOTIFY );
@@ -113,10 +152,35 @@ void CMenuNewGame::_Init( void )
 
 	AddButton( L( "GameUI_Cancel" ), L( "Go back to the Main menu" ), PC_CANCEL, VoidCb( &CMenuNewGame::Hide ), QMF_NOTIFY );
 
-	msgBox.SetMessage( L( "StringsList_240" ) );
 	msgBox.HighlightChoice( CMenuYesNoMessageBox::HIGHLIGHT_NO );
 	msgBox.Link( this );
+}
 
+void CMenuNewGame::TryAddHazardCourse()
+{
+	bool bTrainMap = gMenu.m_gameinfo.trainmap[0] && stricmp(gMenu.m_gameinfo.trainmap, gMenu.m_gameinfo.startmap) != 0;
+
+	if (!bTrainMap)
+	{
+		return;
+	}
+
+	SET_EVENT(hazardCourseCallback, CMenuNewGame::HazardCourseCb());
+
+	CMenuPicButton *hzrd = AddButton(L("GameUI_TrainingRoom"), L("StringsList_190"), PC_HAZARD_COURSE, hazardCourseCallback, QMF_NOTIFY);
+	hzrd->onReleasedClActive = HazardCourseDialogCb;
+	hzrd->onReleasedClActive.pExtra = &hazardCourseCallback;
+
+	if (gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY)
+	{
+		hzrd->SetGrayed(true);
+	}
+
+	// server.dll needs for reading savefiles or startup newgame
+	if (!EngFuncs::CheckGameDll())
+	{
+		hzrd->SetGrayed(true);
+	}
 }
 
 ADD_MENU( menu_newgame, CMenuNewGame, UI_NewGame_Menu );

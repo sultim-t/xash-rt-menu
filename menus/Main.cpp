@@ -51,8 +51,6 @@ private:
 	void QuitDialog( void *pExtra = NULL );
 	void DisconnectCb();
 	void DisconnectDialogCb();
-	void HazardCourseDialogCb();
-	void HazardCourseCb();
 
 	CMenuPicButton	console;
 	class CMenuMainBanner : public CMenuBannerBitmap
@@ -64,7 +62,6 @@ private:
 	CMenuPicButton	resumeGame;
 	CMenuPicButton	disconnect;
 	CMenuPicButton	newGame;
-	CMenuPicButton	hazardCourse;
 	CMenuPicButton	configuration;
 	CMenuPicButton	saveRestore;
 	CMenuPicButton	multiPlayer;
@@ -79,7 +76,6 @@ private:
 	// quit dialog
 	CMenuYesNoMessageBox dialog;
 
-	bool bTrainMap;
 	bool bCustomGame;
 };
 
@@ -129,13 +125,6 @@ void CMenuMain::DisconnectDialogCb()
 	dialog.Show();
 }
 
-void CMenuMain::HazardCourseDialogCb()
-{
-	dialog.onPositive = VoidCb( &CMenuMain::HazardCourseCb );;
-	dialog.SetMessage( L( "StringsList_234" ) );
-	dialog.Show();
-}
-
 /*
 =================
 CMenuMain::Key
@@ -159,34 +148,8 @@ bool CMenuMain::KeyDown( int key )
 	return CMenuFramework::KeyDown( key );
 }
 
-/*
-=================
-UI_Main_HazardCourse
-=================
-*/
-void CMenuMain::HazardCourseCb()
-{
-	if( EngFuncs::GetCvarFloat( "host_serverstate" ) && EngFuncs::GetCvarFloat( "maxplayers" ) > 1 )
-		EngFuncs::HostEndGame( "end of the game" );
-
-	EngFuncs::CvarSetValue( "skill", 1.0f );
-	EngFuncs::CvarSetValue( "deathmatch", 0.0f );
-	EngFuncs::CvarSetValue( "teamplay", 0.0f );
-	EngFuncs::CvarSetValue( "pausable", 1.0f ); // singleplayer is always allowing pause
-	EngFuncs::CvarSetValue( "coop", 0.0f );
-	EngFuncs::CvarSetValue( "maxplayers", 1.0f ); // singleplayer
-
-	EngFuncs::PlayBackgroundTrack( NULL, NULL );
-
-	EngFuncs::ClientCmd( FALSE, "hazardcourse\n" );
-}
-
 void CMenuMain::_Init( void )
 {
-	if( gMenu.m_gameinfo.trainmap[0] && stricmp( gMenu.m_gameinfo.trainmap, gMenu.m_gameinfo.startmap ) != 0 )
-		bTrainMap = true;
-	else bTrainMap = false;
-
 	if( EngFuncs::GetCvarFloat( "host_allow_changegame" ))
 		bCustomGame = true;
 	else bCustomGame = false;
@@ -215,12 +178,6 @@ void CMenuMain::_Init( void )
 	newGame.SetPicture( PC_NEW_GAME );
 	newGame.iFlags |= QMF_NOTIFY;
 	newGame.onReleased = UI_NewGame_Menu;
-
-	hazardCourse.SetNameAndStatus( L( "GameUI_TrainingRoom" ), L( "StringsList_190" ) );
-	hazardCourse.SetPicture( PC_HAZARD_COURSE );
-	hazardCourse.iFlags |= QMF_NOTIFY;
-	hazardCourse.onReleasedClActive = VoidCb( &CMenuMain::HazardCourseDialogCb );
-	hazardCourse.onReleased = VoidCb( &CMenuMain::HazardCourseCb );
 
 	multiPlayer.SetNameAndStatus( L( "GameUI_Multiplayer" ), L( "StringsList_198" ) );
 	multiPlayer.SetPicture( PC_MULTIPLAYER );
@@ -268,7 +225,6 @@ void CMenuMain::_Init( void )
 	if ( gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY )
 	{
 		saveRestore.SetGrayed( true );
-		hazardCourse.SetGrayed( true );
 	}
 
 	// too short execute string - not a real command
@@ -281,7 +237,6 @@ void CMenuMain::_Init( void )
 	if( !EngFuncs::CheckGameDll( ))
 	{
 		saveRestore.SetGrayed( true );
-		hazardCourse.SetGrayed( true );
 		newGame.SetGrayed( true );
 	}
 
@@ -297,20 +252,23 @@ void CMenuMain::_Init( void )
 	AddItem( resumeGame );
 	AddItem( newGame );
 
-	if ( bTrainMap )
-		AddItem( hazardCourse );
-
 	AddItem( saveRestore );
-	AddItem( configuration );
 	AddItem( multiPlayer );
+	AddItem( configuration );
 
 	if ( bCustomGame )
 		AddItem( customGame );
 
+#if !XASH_RAYTRACING
 	AddItem( previews );
+#endif
+
 	AddItem( quit );
+
+#if !XASH_RAYTRACING
 	AddItem( minimizeBtn );
 	AddItem( quitButton );
+#endif
 }
 
 /*
@@ -326,7 +284,6 @@ void CMenuMain::VidInit( bool connected )
 	disconnect.SetCoord( 72, 180 );
 	resumeGame.SetCoord( 72, 230 );
 	newGame.SetCoord( 72, 280 );
-	hazardCourse.SetCoord( 72, 330 );
 
 	bool isSingle = gpGlobals->maxClients < 2;
 
@@ -364,14 +321,31 @@ void CMenuMain::VidInit( bool connected )
 		console.pos.y = 230;
 	}
 
-	console.pos.x = 72;
-	console.CalcPosition();
-	saveRestore.SetCoord( 72, bTrainMap ? 380 : 330 );
-	configuration.SetCoord( 72, bTrainMap ? 430 : 380 );
-	multiPlayer.SetCoord( 72, bTrainMap ? 480 : 430 );
-	customGame.SetCoord( 72, bTrainMap ? 530 : 480 );
-	previews.SetCoord( 72, (bCustomGame) ? (bTrainMap ? 580 : 530) : (bTrainMap ? 530 : 480) );
-	quit.SetCoord( 72, (bCustomGame) ? (bTrainMap ? 630 : 580) : (bTrainMap ? 580 : 530));
+    console.pos.x = 72;
+    console.CalcPosition();
+    saveRestore.SetCoord( 72, 330 );
+    multiPlayer.SetCoord( 72, 380 );
+    configuration.SetCoord( 72, 430 );
+    customGame.SetCoord( 72, 480 );
+    previews.SetCoord( 72, ( bCustomGame ) ? 530 : 480 );
+#if XASH_RAYTRACING
+	// no 'previews' button
+    quit.SetCoord( 72, ( bCustomGame ) ? 530 : 480 );
+#else
+    quit.SetCoord( 72, ( bCustomGame ) ? 580 : 530 );
+#endif
+
+    int offsetY = connected ? 150 : 100;
+    console.pos.y += offsetY;
+    resumeGame.pos.y += offsetY;
+    disconnect.pos.y += offsetY;
+    newGame.pos.y += offsetY;
+    configuration.pos.y += offsetY;
+    saveRestore.pos.y += offsetY;
+    multiPlayer.pos.y += offsetY;
+    customGame.pos.y += offsetY;
+    previews.pos.y += offsetY;
+    quit.pos.y += offsetY;
 }
 
 void CMenuMain::_VidInit()
