@@ -296,7 +296,7 @@ void CMenuLoadGame::_Init( void )
 
 	savesList.SetModel( &savesListModel );
 	savesList.SetCharSize( QM_SMALLFONT );
-	savesList.SetRect( 360, 230, -20, 465 );
+	savesList.SetRect( 360 + BASE_OFFSET_X, 230, -20, 465 );
 
 	msgBox.SetMessage( L( "Delete this saved game?" ) );
 	msgBox.onPositive = VoidCb( &CMenuLoadGame::DeleteGame );

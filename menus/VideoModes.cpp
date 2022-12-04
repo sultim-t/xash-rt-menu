@@ -387,6 +387,9 @@ void CMenuVidModes::_Init( void )
 	particlesUntextured.LinkCvar( "rt_bParticlesUntextured" );
 	particlesUntextured.bUpdateImmediately = true;
 
+	static CMenuCheckBox _todo_notice;
+	_todo_notice.SetNameAndStatus( L( "_ TODO: LINK CVARS _" ), L( "" ) );
+
 	CMenuBaseItem *pCheckboxes[] =
 	{
 		&vsync,
@@ -394,6 +397,7 @@ void CMenuVidModes::_Init( void )
 		&nearestTextureFiltering,
 		&particlesUntextured,
 		// &disablePvsCulling,
+		&_todo_notice,
 	};
 
 
