@@ -56,6 +56,16 @@ void CMenuOptions::_Init( void )
 
 	AddItem( background );
 	AddItem( banner );
+#if XASH_RAYTRACING
+	// Directly to "video modes", skipping "video" menu
+	AddButton(L("Graphics"), L("Rendering API settings, window size"),
+			  PC_VID_MODES, UI_VidModes_Menu, QMF_NOTIFY);
+
+	AddButton(L("GameUI_Audio"), L("Sound volume and quality"),
+			  PC_AUDIO, UI_Audio_Menu, QMF_NOTIFY);
+	AddButton(L("Controls"), L("Keyboard, mouse and gamepad settings"),
+			  PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY);
+#else
 	AddButton( L( "Controls" ), L( "Change keyboard and mouse settings" ),
 		PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY );
 	AddButton( L( "GameUI_Audio" ), L( "Change sound volume and quality" ),
@@ -68,6 +78,7 @@ void CMenuOptions::_Init( void )
 		PC_GAMEPAD, UI_GamePad_Menu, QMF_NOTIFY );
 	AddButton( L( "Update" ), L( "Check for updates" ),
 		PC_UPDATE, msgBox.MakeOpenEvent(), QMF_NOTIFY );
+#endif
 	AddButton( L( "Done" ), L( "Go back to the Main menu" ),
 		PC_DONE, VoidCb( &CMenuOptions::Hide ), QMF_NOTIFY );
 }

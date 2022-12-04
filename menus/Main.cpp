@@ -150,9 +150,12 @@ bool CMenuMain::KeyDown( int key )
 
 void CMenuMain::_Init( void )
 {
+#if !XASH_RAYTRACING
 	if( EngFuncs::GetCvarFloat( "host_allow_changegame" ))
 		bCustomGame = true;
-	else bCustomGame = false;
+	else
+#endif
+		bCustomGame = false;
 
 	// console
 	console.SetNameAndStatus( L( "GameUI_Console" ), L( "Show console" ) );
