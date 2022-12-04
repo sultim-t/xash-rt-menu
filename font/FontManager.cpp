@@ -461,6 +461,10 @@ int CFontManager::DrawCharacter(HFont fontHandle, int ch, Point pt, int charH, c
 	if( !font )
 		return 0;
 
+#if XASH_RAYTRACING
+    forceAdditive = false;
+#endif
+
 	return font->DrawCharacter( ch, pt, charH, color, forceAdditive );
 }
 
