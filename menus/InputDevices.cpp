@@ -80,7 +80,7 @@ void CMenuInputDevices::_Init( void )
 	done.SetNameAndStatus( L( "Done" ), L( "Save changed and go back to the Customize Menu" ) );
 	done.SetPicture( PC_DONE );
 	done.onReleased = VoidCb( &CMenuInputDevices::SaveAndPopMenu );
-	done.SetCoord( 72, 680 );
+	done.SetCoord( BASE_OFFSET_X, 680 );
 
 	mouse.szName = L( "Ignore mouse" );
 	mouse.szStatusText = L( "Need for some servers. Will disable mouse in menu too" );
@@ -103,20 +103,20 @@ void CMenuInputDevices::_Init( void )
 	});
 #endif
 
-	mouse.SetCoord( 72, 230 );
+	mouse.SetCoord( BASE_OFFSET_X, 230 );
 
 	touch.szName = L( "Enable touch" );
 	touch.szStatusText = L( "On-screen controls for touchscreen" );
 	touch.iFlags |= QMF_NOTIFY;
-	touch.SetCoord( 72, 280 );
+	touch.SetCoord( BASE_OFFSET_X, 280 );
 
 	joystick.szName = L( "GameUI_JoystickLabel" );
-	joystick.SetCoord( 72, 330 );
+	joystick.SetCoord( BASE_OFFSET_X, 330 );
 
 	evdev.szName = L( "Evdev input (root)" );
 	evdev.szStatusText = L( "Press this to enable full mouse and keyboard control on Android" );
 	evdev.iFlags |= QMF_NOTIFY;
-	evdev.SetCoord( 72, 380 );
+	evdev.SetCoord( BASE_OFFSET_X, 380 );
 	evdev.onReleased.SetCommand( FALSE, "evdev_autodetect\n" );
 
 	AddItem( background );

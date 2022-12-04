@@ -161,7 +161,7 @@ void CMenuVidOptions::_Init( void )
 	testImage.SetPicture( ART_GAMMA );
 
 	done.SetNameAndStatus( L( "GameUI_OK" ), L( "Go back to the Video Menu" ) );
-	done.SetCoord( 72, 435 );
+	done.SetCoord( BASE_OFFSET_X, 435 );
 	done.SetPicture( PC_DONE );
 	done.onReleased = VoidCb( &CMenuVidOptions::SaveAndPopMenu );
 
@@ -169,7 +169,7 @@ void CMenuVidOptions::_Init( void )
 
 #if LEGACY_VIEWSIZE
 	screenSize.SetNameAndStatus( L( "Screen size" ), L( "Set the screen size" ) );
-	screenSize.SetCoord( 72, height );
+	screenSize.SetCoord( BASE_OFFSET_X, height );
 	screenSize.Setup( 30, 120, 10 );
 	screenSize.onChanged = CMenuEditable::WriteCvarCb;
 
@@ -177,13 +177,13 @@ void CMenuVidOptions::_Init( void )
 #endif
 
 	gammaIntensity.SetNameAndStatus( L( "GameUI_Gamma" ), L( "Set gamma value" ) );
-	gammaIntensity.SetCoord( 72, height );
+	gammaIntensity.SetCoord( BASE_OFFSET_X, height );
 	gammaIntensity.Setup( 0.0, 1.0, 0.025 );
 	gammaIntensity.onChanged = VoidCb( &CMenuVidOptions::UpdateConfig );
 	gammaIntensity.onCvarGet = VoidCb( &CMenuVidOptions::GetConfig );
 	height += 60;
 
-	glareReduction.SetCoord( 72, height );
+	glareReduction.SetCoord( BASE_OFFSET_X, height );
 	glareReduction.SetNameAndStatus( L( "GameUI_Brightness" ), L( "Set brightness level" ) );
 	glareReduction.Setup( 0, 1.0, 0.025 );
 	glareReduction.onChanged = VoidCb( &CMenuVidOptions::UpdateConfig );
@@ -191,7 +191,7 @@ void CMenuVidOptions::_Init( void )
 	height += 60;
 
 	vbo.SetNameAndStatus( L( "Use VBO" ), L( "Use new world renderer. Faster, but rarely glitchy" ) );
-	vbo.SetCoord( 72, 565 );
+	vbo.SetCoord( BASE_OFFSET_X, 565 );
 
 	AddItem( background );
 	AddItem( banner );

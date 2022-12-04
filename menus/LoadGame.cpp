@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ART_BANNER_LOAD "gfx/shell/head_load"
 #define ART_BANNER_SAVE "gfx/shell/head_save"
 
-#define LEVELSHOT_X		72
+#define LEVELSHOT_X		BASE_OFFSET_X
 #define LEVELSHOT_Y		400
 #define LEVELSHOT_W		192
 #define LEVELSHOT_H		160
@@ -270,22 +270,22 @@ void CMenuLoadGame::_Init( void )
 	save.SetNameAndStatus( L( "GameUI_Save" ), L( "Save current game" ) );
 	save.SetPicture( PC_SAVE_GAME );
 	save.onReleased = VoidCb( &CMenuLoadGame::SaveGame );
-	save.SetCoord( 72, 230 );
+	save.SetCoord( BASE_OFFSET_X, 230 );
 
 	load.SetNameAndStatus( L( "GameUI_Load" ), L( "Load saved game" ) );
 	load.SetPicture( PC_LOAD_GAME );
 	load.onReleased = VoidCb( &CMenuLoadGame::LoadGame );
-	load.SetCoord( 72, 230 );
+	load.SetCoord( BASE_OFFSET_X, 230 );
 
 	remove.SetNameAndStatus( L( "Delete" ), L( "Delete saved game" ) );
 	remove.SetPicture( PC_DELETE );
 	remove.onReleased = msgBox.MakeOpenEvent();
-	remove.SetCoord( 72, 280 );
+	remove.SetCoord( BASE_OFFSET_X, 280 );
 
 	cancel.SetNameAndStatus( L( "GameUI_Cancel" ), L( "Return back to main menu" ) );
 	cancel.SetPicture( PC_CANCEL );
 	cancel.onReleased = VoidCb( &CMenuLoadGame::Hide );
-	cancel.SetCoord( 72, 330 );
+	cancel.SetCoord( BASE_OFFSET_X, 330 );
 
 	savesList.szName = hintText;
 	savesList.onChanged = VoidCb( &CMenuLoadGame::UpdateGame );

@@ -383,7 +383,7 @@ void CMenuControls::_Init( void )
 {
 	banner.SetPicture( ART_BANNER );
 
-	keysList.SetRect( 360, 230, -20, 465 );
+	keysList.SetRect( 360 + BASE_OFFSET_X, 230, -20, 465 );
 	keysList.SetModel( &keysListModel );
 	keysList.SetupColumn( 0, L( "GameUI_Action" ), 0.50f );
 	keysList.SetupColumn( 1, L( "GameUI_KeyButton" ), 0.25f );

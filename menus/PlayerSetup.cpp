@@ -446,17 +446,17 @@ void CMenuPlayerSetup::_Init( void )
 			for( size_t i = 0; i < V_ARRAYSIZE( g_LogoColors ); i++ )
 				itemlist[i] = L( g_LogoColors[i].name );
 
-			logoImage.SetRect( 72, 230 + m_iBtnsNum * 50 + 10, 200, 200 );
+			logoImage.SetRect( BASE_OFFSET_X, 230 + m_iBtnsNum * 50 + 10, 200, 200 );
 
 			logo.Setup( &logosModel );
 			logo.LinkCvar( "cl_logofile", CMenuEditable::CVAR_STRING );
 			logo.onChanged = VoidCb( &CMenuPlayerSetup::UpdateLogo );
-			logo.SetRect( 72, logoImage.pos.y + logoImage.size.h + UI_OUTLINE_WIDTH, 200, 32 );
+			logo.SetRect( BASE_OFFSET_X, logoImage.pos.y + logoImage.size.h + UI_OUTLINE_WIDTH, 200, 32 );
 
 			logoColor.Setup( &colors );
 			logoColor.LinkCvar( "cl_logocolor", CMenuEditable::CVAR_STRING );
 			logoColor.onChanged = VoidCb( &CMenuPlayerSetup::ApplyColorToLogoPreview );;
-			logoColor.SetRect( 72, logo.pos.y + logo.size.h + UI_OUTLINE_WIDTH, 200, 32 );
+			logoColor.SetRect( BASE_OFFSET_X, logo.pos.y + logo.size.h + UI_OUTLINE_WIDTH, 200, 32 );
 		}
 	}
 

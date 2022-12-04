@@ -271,7 +271,7 @@ void CMenuCreateGame::_Init( void )
 
 void CMenuCreateGame::_VidInit()
 {
-	nat.SetCoord( 72, 685 );
+	nat.SetCoord( BASE_OFFSET_X, 685 );
 	if( !EngFuncs::GetCvarFloat("public") )
 		nat.Hide();
 	else nat.Show();

@@ -284,9 +284,9 @@ void CMenuMain::VidInit( bool connected )
 	// statically positioned items
 	minimizeBtn.SetRect( uiStatic.width - 72, 13, 32, 32 );
 	quitButton.SetRect( uiStatic.width - 36, 13, 32, 32 );
-	disconnect.SetCoord( 72, 180 );
-	resumeGame.SetCoord( 72, 230 );
-	newGame.SetCoord( 72, 280 );
+	disconnect.SetCoord( BASE_OFFSET_X, 180 );
+	resumeGame.SetCoord( BASE_OFFSET_X, 230 );
+	newGame.SetCoord( BASE_OFFSET_X, 280 );
 
 	bool isSingle = gpGlobals->maxClients < 2;
 
@@ -324,18 +324,18 @@ void CMenuMain::VidInit( bool connected )
 		console.pos.y = 230;
 	}
 
-    console.pos.x = 72;
+    console.pos.x = BASE_OFFSET_X;
     console.CalcPosition();
-    saveRestore.SetCoord( 72, 330 );
-    multiPlayer.SetCoord( 72, 380 );
-    configuration.SetCoord( 72, 430 );
-    customGame.SetCoord( 72, 480 );
-    previews.SetCoord( 72, ( bCustomGame ) ? 530 : 480 );
+    saveRestore.SetCoord( BASE_OFFSET_X, 330 );
+    multiPlayer.SetCoord( BASE_OFFSET_X, 380 );
+    configuration.SetCoord( BASE_OFFSET_X, 430 );
+    customGame.SetCoord( BASE_OFFSET_X, 480 );
+    previews.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 530 : 480 );
 #if XASH_RAYTRACING
 	// no 'previews' button
-    quit.SetCoord( 72, ( bCustomGame ) ? 530 : 480 );
+    quit.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 530 : 480 );
 #else
-    quit.SetCoord( 72, ( bCustomGame ) ? 580 : 530 );
+    quit.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 580 : 530 );
 #endif
 
     int offsetY = connected ? 150 : 100;

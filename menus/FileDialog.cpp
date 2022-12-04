@@ -133,7 +133,7 @@ void CMenuFileDialog::_Init( void )
 	fileList.SetRect( 360, 230, -20, 465 );
 	UpdateExtra();
 
-	preview.SetRect( 72, 380, 196, 196 );
+	preview.SetRect( BASE_OFFSET_X, 380, 196, 196 );
 
 	AddItem( background );
 	// AddItem( banner );

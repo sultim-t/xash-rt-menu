@@ -299,12 +299,12 @@ void CMenuVidModes::_Init( void )
 {
 	banner.SetPicture(ART_BANNER);
 
-	vidList.SetRect( 360, 230, -20, 365 );
+	vidList.SetRect( 360 + BASE_OFFSET_X, 230, -20, 365 );
 	vidList.SetupColumn( 0, L( "GameUI_Resolution" ), 1.0f );
 	vidList.SetModel( &vidListModel );
 
 	windowed.SetNameAndStatus( L( "GameUI_Windowed" ), L( "GameUI_Windowed" ) );
-	windowed.SetCoord( 360, 620 );
+	windowed.SetCoord( 360 + BASE_OFFSET_X, 620 );
 	SET_EVENT_MULTI( windowed.onChanged,
 	{
 		CMenuVidModes *parent = pSelf->GetParent(CMenuVidModes);
@@ -320,7 +320,7 @@ void CMenuVidModes::_Init( void )
 	});
 
 	vsync.SetNameAndStatus( L( "GameUI_VSync" ), L( "GameUI_VSync" ) );
-	vsync.SetCoord( 360, 670 );
+	vsync.SetCoord( 360 + BASE_OFFSET_X, 670 );
 	vsync.LinkCvar( "gl_vsync" );
 
 	testModeMsgBox.SetMessage( testModeMsg );
