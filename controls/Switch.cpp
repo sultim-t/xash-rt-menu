@@ -186,6 +186,7 @@ void CMenuSwitch::Draw( void )
 	uint selectColor = iSelectColor;
 	UI_DrawString( font, m_scTextPos, m_scTextSize, szName, uiColorHelp, m_scChSize, eTextAlignment, textflags | ETF_FORCECOL );
 
+#if !HELP_TEXT_ONLY_BOTTOM
 	if( szStatusText && iFlags & QMF_NOTIFY )
 	{
 		Point coord;
@@ -199,6 +200,7 @@ void CMenuSwitch::Draw( void )
 		EngFuncs::DrawSetTextColor( r, g, b );
 		EngFuncs::DrawConsoleString( coord, szStatusText );
 	}
+#endif
 
 	if( iFlags & QMF_GRAYED )
 	{

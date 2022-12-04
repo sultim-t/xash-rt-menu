@@ -114,7 +114,8 @@ void CMenuCheckBox::Draw( void )
 
 	UI_DrawString( font, m_scTextPos, m_scTextSize, szName, colorText, m_scChSize, eTextAlignment, textflags );
 
-	if( szStatusText && iFlags & QMF_NOTIFY )
+#if !HELP_TEXT_ONLY_BOTTOM
+    if( szStatusText && iFlags & QMF_NOTIFY )
 	{
 		Point coord;
 
@@ -131,6 +132,7 @@ void CMenuCheckBox::Draw( void )
 		EngFuncs::DrawSetTextColor( r, g, b );
 		EngFuncs::DrawConsoleString( coord, szStatusText );
 	}
+#endif
 
 	if( iFlags & QMF_GRAYED )
 	{

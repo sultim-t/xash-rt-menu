@@ -15,6 +15,8 @@ GNU General Public License for more details.
 #ifndef BASEITEM_H
 #define BASEITEM_H
 
+#define HELP_TEXT_ONLY_BOTTOM XASH_RAYTRACING
+
 #include "BaseMenu.h"
 #include "Color.h"
 

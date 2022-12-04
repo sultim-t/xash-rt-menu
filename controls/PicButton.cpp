@@ -185,7 +185,8 @@ void CMenuPicButton::Draw( )
 
 	if( iOldState == BUTTON_NOFOCUS && state != BUTTON_NOFOCUS )
 		iFocusStartTime = uiStatic.realTime;
-
+	
+#if !HELP_TEXT_ONLY_BOTTOM
 #ifndef CS16CLIENT
 	if( szStatusText && iFlags & QMF_NOTIFY )
 	{
@@ -200,6 +201,7 @@ void CMenuPicButton::Draw( )
 		EngFuncs::DrawSetTextColor( r, g, b );
 		EngFuncs::DrawConsoleString( coord, szStatusText );
 	}
+#endif
 #endif
 
 	int a = (512 - (uiStatic.realTime - m_iLastFocusTime)) >> 1;

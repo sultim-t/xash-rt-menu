@@ -135,6 +135,7 @@ void CMenuAction::Draw( )
 		}
 	}
 
+#if !HELP_TEXT_ONLY_BOTTOM
 	if( szStatusText && iFlags & QMF_NOTIFY )
 	{
 		Point coord;
@@ -148,6 +149,7 @@ void CMenuAction::Draw( )
 		EngFuncs::DrawSetTextColor( r, g, b );
 		EngFuncs::DrawConsoleString( coord, szStatusText );
 	}
+#endif
 
 	if( iFlags & QMF_GRAYED )
 	{

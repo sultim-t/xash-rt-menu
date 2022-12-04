@@ -153,6 +153,7 @@ void CMenuSlider::Draw( void )
 	int	textHeight, sliderX;
 	uint textflags = ( iFlags & QMF_DROPSHADOW ) ? ETF_SHADOW : 0;
 
+#if !HELP_TEXT_ONLY_BOTTOM
 	if( szStatusText && iFlags & QMF_NOTIFY )
 	{
 		Point coord;
@@ -167,6 +168,7 @@ void CMenuSlider::Draw( void )
 		EngFuncs::DrawSetTextColor( r, g, b );
 		EngFuncs::DrawConsoleString( coord, szStatusText );
 	}
+#endif
 
 	if( m_iKeepSlider )
 	{
