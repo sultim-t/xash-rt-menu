@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <vector>
+
 #include "Framework.h"
 #include "MenuStrings.h"
 #include "Bitmap.h"
@@ -27,30 +29,83 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "Action.h"
 #include "YesNoMessageBox.h"
 #include "SpinControl.h"
+#include "StringArrayModel.h"
 #include "utlvector.h"
 
 #define ART_BANNER		"gfx/shell/head_vidmodes"
 
-enum
+
+#define DISABLE_RENDERER_API_SWITCH 1
+
+
+static const char *pAmdFsrNames[] =
 {
-	VID_NOMODE = -2, // engine values
-	VID_AUTOMODE = -1,
-	VID_NOMODE_POS = 0, // values in array
-	VID_AUTOMODE_POS = 1,
-	VID_MODES_POS = 2, // there starts engine modes
+	L("Off"),
+	L("Quality"),
+	L("Balanced"),
+	L("Performance"),
+	L("Ultra Performance"),
+};
+static const char *pNvDlssNames[] =
+{
+	L("Off"),
+	L("Quality"),
+	L("Balanced"),
+	L("Performance"),
+	L("Ultra Performance"),
+};
+static const char *pSharpeningNames[] =
+{
+	L("Off"),
+	L("Naive"),
+	L("AMD CAS"),
 };
 
-class CMenuVidModesModel : public CMenuBaseModel
+
+class CMenuVidModesModel : public CMenuBaseArrayModel
 {
 public:
-	void Update();
-	int GetColumns() const { return 1; }
-	int GetRows() const { return m_iNumModes; }
-	const char *GetCellText(int line, int column) { return m_szModes[line]; }
+	void Update()
+	{
+		int i;
+
+		for (i = 0; i < 64; i++)
+		{
+			const char *mode = EngFuncs::GetModeString(i);
+			if (!mode) break;
+			m_szModes[i] = mode;
+		}
+		m_iNumModes = i;
+	}
+	int GetRows() const
+	{
+		return m_iNumModes;
+	}
+	const char *GetText(int i) override
+	{
+		return m_szModes[IndexToVidMode(i)];
+	}
+	int IndexToVidMode(int i)
+	{
+		ASSERT(m_iNumModes != 0);
+
+		i = Q_max(0, Q_min(i, m_iNumModes - 1));
+
+		// inverse indexing, because higher resolutions
+		// should be on the right side
+		return (m_iNumModes - 1) - i;
+	}
+	int VidModeToIndex(int i)
+	{
+		// same
+		return IndexToVidMode(i);
+	}
+
 private:
 	int m_iNumModes;
 	const char *m_szModes[64];
 };
+
 
 class CMenuRenderersModel : public CMenuBaseArrayModel
 {
@@ -89,6 +144,7 @@ private:
 	CUtlVector<refdll> m_refs;
 };
 
+
 class CMenuVidModes : public CMenuFramework
 {
 private:
@@ -101,8 +157,10 @@ public:
 	void SetMode( int mode );
 	void SetMode( int w, int h );
 	void SetConfig( );
+	void SetConfigAndHide( );
 	void RevertChanges();
 	void ApplyChanges();
+
 	void GetRendererConfig()
 	{
 		const char *refdll = EngFuncs::GetCvarString( "r_refdll" );
@@ -135,16 +193,34 @@ public:
 		EngFuncs::CvarSetString( "r_refdll", renderersModel.GetShortName( i ));
 	}
 
-	CMenuCheckBox	windowed;
-	CMenuCheckBox	vsync;
+	int Vid_GetCurrentVidModeIndex()
+	{
+		return vidListModel.IndexToVidMode(vidList.GetCurrentValue());
+	}
 
-	CMenuTable	vidList;
-	CMenuVidModesModel vidListModel;
+	void Vid_SetCurrentVidModeIndex(int vidMode)
+	{
+		return vidList.SetCurrentValue(vidListModel.VidModeToIndex(vidMode));
+	}
 
-	CMenuYesNoMessageBox testModeMsgBox;
+public:
+	CMenuCheckBox			vsync;
+	CMenuCheckBox			disablePvsCulling;
+	CMenuCheckBox			muzzleFlash;
+	CMenuCheckBox			nearestTextureFiltering;
+	CMenuCheckBox			particlesUntextured;
 
-	CMenuRenderersModel renderersModel;
-	CMenuSpinControl renderers;
+	CMenuVidModesModel		vidListModel;
+	CMenuSpinControl		vidList;
+
+	CMenuYesNoMessageBox	testModeMsgBox;
+
+	CMenuRenderersModel		renderersModel;
+	CMenuSpinControl		renderers;
+
+	CMenuSpinControl		nvDlss;
+	CMenuSpinControl		amdFsr;
+	CMenuSpinControl		sharpening;
 
 	int prevMode;
 	int prevModeX;
@@ -154,27 +230,6 @@ public:
 	char testModeMsg[256];
 };
 
-
-/*
-=================
-UI_VidModes_GetModesList
-=================
-*/
-void CMenuVidModesModel::Update( void )
-{
-	unsigned int i;
-
-	m_szModes[0] = L( "<Current window size>" );
-	m_szModes[1] = L( "<Desktop size>" );
-
-	for( i = VID_MODES_POS; i < 64 - VID_MODES_POS; i++ )
-	{
-		const char *mode = EngFuncs::GetModeString( i - VID_MODES_POS );
-		if( !mode ) break;
-		m_szModes[i] = mode;
-	}
-	m_iNumModes = i;
-}
 
 void CMenuVidModes::SetMode( int w, int h )
 {
@@ -187,10 +242,6 @@ void CMenuVidModes::SetMode( int w, int h )
 void CMenuVidModes::SetMode( int mode )
 {
 	char cmd[64];
-
-	// vid_setmode is a new command, which does not depends on 
-	// static resolution list but instead uses dynamic resolution
-	// list provided by video backend
 	snprintf( cmd, sizeof( cmd ), "vid_setmode %i\n", mode );
 
 	EngFuncs::ClientCmd( TRUE, cmd );
@@ -203,44 +254,30 @@ UI_VidModes_SetConfig
 */
 void CMenuVidModes::SetConfig( )
 {
-	bool testMode = false;
-	int  currentModeIndex = vidList.GetCurrentIndex() - VID_MODES_POS;
-	bool isVidModeChanged = prevMode != currentModeIndex;
-	bool isWindowedModeChanged = prevFullscreen != !windowed.bChecked;
+	// called on applyBtn
 
-	/*
-	checking windowed mode first because it'll be checked next in
-	screen resolution changing code, otherwise when user try to
-	change screen resolution and windowed flag at same time,
-	only resolution will be changed.
-	*/
-	if( isWindowedModeChanged )
-	{
-		EngFuncs::CvarSetValue( "fullscreen", !windowed.bChecked );
-		// moved to fullscreen, enable test mode
-		testMode |= !windowed.bChecked;
-	}
+	bool testMode = false;
+	int  currentModeIndex = Vid_GetCurrentVidModeIndex();
+	bool isVidModeChanged = prevMode != currentModeIndex;
 
 	if( isVidModeChanged )
 	{
 		SetMode( currentModeIndex );
 		EngFuncs::CvarSetValue( "vid_mode", currentModeIndex );
-		vidList.SetCurrentIndex( currentModeIndex + VID_MODES_POS );
-		// have changed resolution, but enable test mode only in fullscreen
-		testMode |= !windowed.bChecked;
+		Vid_SetCurrentVidModeIndex( currentModeIndex );
 	}
-
-	vsync.WriteCvar();
 
 	if( testMode )
 	{
 		testModeMsgBox.Show();
 		testModeTimer = gpGlobals->time + 10.0f; // ten seconds should be enough
 	}
-	else
-	{
-		Hide();
-	}
+}
+
+void CMenuVidModes::SetConfigAndHide()
+{
+	SetConfig();
+	Hide();
 }
 
 void CMenuVidModes::ApplyChanges()
@@ -253,33 +290,54 @@ void CMenuVidModes::ApplyChanges()
 
 void CMenuVidModes::RevertChanges()
 {
-	bool fullscreenChanged = false;
-
-	// if we switched FROM fullscreen TO windowed, then we must get rid of fullscreen mode
-	// so we can easily change the window size, without jerking display mode
-	if( prevFullscreen == false && EngFuncs::GetCvarFloat( "fullscreen" ) != 0.0f )
-	{
-		EngFuncs::CvarSetValue( "fullscreen", prevFullscreen );
-		fullscreenChanged = true;
-	}
-
+	EngFuncs::CvarSetValue("fullscreen", prevFullscreen);
+	
 	SetMode( prevModeX, prevModeY );
-
-	// otherwise, we better to set window size at first, then switch TO fullscreen
-	if( !fullscreenChanged )
-	{
-		EngFuncs::CvarSetValue( "fullscreen", prevFullscreen );
-	}
 }
 
 void CMenuVidModes::Draw()
 {
-	if( testModeMsgBox.IsVisible() )
+	const int nvDlssCvar = (int)EngFuncs::GetCvarFloat("rt_iUpscaleNvDlss");
+	const int amdFsrCvar = (int)EngFuncs::GetCvarFloat("rt_iUpscaleAmdFsr2");
+	const int nvDlssAvailable = (int)EngFuncs::GetCvarFloat("_rt_bDLSSAvailable");
+
+	if (nvDlssAvailable)
 	{
-		if( testModeTimer - gpGlobals->time > 0 )
+		if (nvDlssCvar == 0 && amdFsrCvar == 0)
 		{
-			snprintf( testModeMsg, sizeof( testModeMsg ) - 1, L( "Keep this resolution? %i seconds remaining" ), (int)(testModeTimer - gpGlobals->time) );
-			testModeMsg[sizeof(testModeMsg)-1] = 0;
+			nvDlss.SetGrayed(false);
+			amdFsr.SetGrayed(false);
+		}
+		else if (nvDlssCvar == 0 && amdFsrCvar != 0)
+		{
+			nvDlss.SetGrayed(true);
+			amdFsr.SetGrayed(false);
+		}
+		else if (nvDlssCvar != 0 && amdFsrCvar == 0)
+		{
+			nvDlss.SetGrayed(false);
+			amdFsr.SetGrayed(true);
+		}
+		else
+		{
+			// were unsafely modified by cvars directly, gray both of them
+			nvDlss.SetGrayed(true);
+			amdFsr.SetGrayed(true);
+		}
+	}
+	else
+	{
+		nvDlss.SetGrayed(true);
+		amdFsr.SetGrayed(false);
+	}
+
+
+	if (testModeMsgBox.IsVisible())
+	{
+		if (testModeTimer - gpGlobals->time > 0)
+		{
+			snprintf(testModeMsg, sizeof(testModeMsg) - 1, L("Keep this resolution? %i seconds remaining"), (int)(testModeTimer - gpGlobals->time));
+			testModeMsg[sizeof(testModeMsg) - 1] = 0;
 		}
 		else
 		{
@@ -287,6 +345,8 @@ void CMenuVidModes::Draw()
 			testModeMsgBox.Hide();
 		}
 	}
+
+
 	CMenuFramework::Draw();
 }
 
@@ -299,52 +359,147 @@ void CMenuVidModes::_Init( void )
 {
 	banner.SetPicture(ART_BANNER);
 
-	vidList.SetRect( 360 + BASE_OFFSET_X, 230, -20, 365 );
-	vidList.SetupColumn( 0, L( "GameUI_Resolution" ), 1.0f );
-	vidList.SetModel( &vidListModel );
 
-	windowed.SetNameAndStatus( L( "GameUI_Windowed" ), L( "GameUI_Windowed" ) );
-	windowed.SetCoord( 360 + BASE_OFFSET_X, 620 );
-	SET_EVENT_MULTI( windowed.onChanged,
+	vidListModel.Update();
+	vidList.szName = L( "Window size" );
+	vidList.Setup( &vidListModel );
+	vidList.SetCharSize( QM_SMALLFONT );
+	vidList.bUpdateImmediately = true;
+
+
+	vsync.SetNameAndStatus( L( "VSync" ), L( "enable vertical synchronization for RT renderer" ) );
+	vsync.LinkCvar( "rt_bVsync" );
+	vsync.bUpdateImmediately = true;
+
+	disablePvsCulling.SetNameAndStatus( L( "Render all" ), L( "if true, in-engine PVS culling is disabled, e.g. shadows of the objects behind walls will be visible" ) );
+	disablePvsCulling.LinkCvar( "rt_bDisablePvsCulling" );
+	disablePvsCulling.bUpdateImmediately = true;
+
+	muzzleFlash.SetNameAndStatus( L( "Muzzle flash" ), L( "enable muzzle flash light source" ) );
+	muzzleFlash.LinkCvar( "rt_bMuzzleFlashEnable" );
+	muzzleFlash.bUpdateImmediately = true;
+
+	nearestTextureFiltering.SetNameAndStatus( L( "Vintage textures" ), L( "disable texture filtering" ) );
+	nearestTextureFiltering.LinkCvar( "rt_bTextureFilterNearest" );
+	nearestTextureFiltering.bUpdateImmediately = true;
+
+	particlesUntextured.SetNameAndStatus( L( "Vintage particles" ), L( "use squares for particles" ) );
+	particlesUntextured.LinkCvar( "rt_bParticlesUntextured" );
+	particlesUntextured.bUpdateImmediately = true;
+
+	CMenuBaseItem *pCheckboxes[] =
 	{
-		CMenuVidModes *parent = pSelf->GetParent(CMenuVidModes);
-		if( !parent->windowed.bChecked && parent->vidList.GetCurrentIndex() < VID_AUTOMODE_POS )
-			parent->vidList.SetCurrentIndex( VID_AUTOMODE_POS );
-	});
+		&vsync,
+		&muzzleFlash,
+		&nearestTextureFiltering,
+		&particlesUntextured,
+		// &disablePvsCulling,
+	};
 
-	SET_EVENT_MULTI( vidList.onChanged,
-	{
-		CMenuVidModes *parent = pSelf->GetParent(CMenuVidModes);
-		if( !parent->windowed.bChecked && parent->vidList.GetCurrentIndex() < VID_AUTOMODE_POS )
-			parent->vidList.SetCurrentIndex( VID_AUTOMODE_POS );
-	});
-
-	vsync.SetNameAndStatus( L( "GameUI_VSync" ), L( "GameUI_VSync" ) );
-	vsync.SetCoord( 360 + BASE_OFFSET_X, 670 );
-	vsync.LinkCvar( "gl_vsync" );
 
 	testModeMsgBox.SetMessage( testModeMsg );
 	testModeMsgBox.onPositive = VoidCb( &CMenuVidModes::ApplyChanges );
 	testModeMsgBox.onNegative = VoidCb( &CMenuVidModes::RevertChanges );
 	testModeMsgBox.Link( this );
 
+
 	renderersModel.Update();
 	renderers.szName = L( "GameUI_Renderer" );
 	renderers.Setup( &renderersModel );
-	renderers.SetRect( 80, 480, 250, 32 );
 	renderers.SetCharSize( QM_SMALLFONT );
 	renderers.onCvarGet = VoidCb( &CMenuVidModes::GetRendererConfig );
 	renderers.onCvarWrite = VoidCb( &CMenuVidModes::WriteRendererConfig );
 	renderers.bUpdateImmediately = true;
 
+
+	static CStringArrayModel nvDlssModel(pNvDlssNames, V_ARRAYSIZE(pNvDlssNames));
+	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
+	nvDlss.Setup(&nvDlssModel);
+	nvDlss.SetCharSize(QM_SMALLFONT);
+	nvDlss.LinkCvar("rt_iUpscaleNvDlss", CMenuEditable::CVAR_VALUE);
+	nvDlss.bUpdateImmediately = true;
+
+	static CStringArrayModel amdFsrModel(pAmdFsrNames, V_ARRAYSIZE(pAmdFsrNames));
+	amdFsr.SetNameAndStatus("AMD FSR 2.1", L("set AMD FidelityFX Super Resolution 2.1"));
+	amdFsr.Setup(&amdFsrModel);
+	amdFsr.SetCharSize(QM_SMALLFONT);
+	amdFsr.LinkCvar("rt_iUpscaleAmdFsr2", CMenuEditable::CVAR_VALUE);
+	amdFsr.bUpdateImmediately = true;
+
+	static CStringArrayModel sharpeningModel(pSharpeningNames, V_ARRAYSIZE(pSharpeningNames));
+	sharpening.SetNameAndStatus("Sharpening", L("set sharpening to apply on top of image"));
+	sharpening.Setup(&sharpeningModel);
+	sharpening.SetCharSize(QM_SMALLFONT);
+	sharpening.LinkCvar("rt_iSharpeningMode", CMenuEditable::CVAR_VALUE);
+	sharpening.bUpdateImmediately = true;
+
+
 	AddItem( background );
 	AddItem( banner );
-	AddButton( L( "GameUI_Apply" ), L( "Apply changes" ), PC_OK, VoidCb( &CMenuVidModes::SetConfig ) );
-	AddButton( L( "GameUI_Cancel" ), L( "Return back to previous menu" ), PC_CANCEL, VoidCb( &CMenuVidModes::Hide ) );
 	AddItem( renderers );
-	AddItem( windowed );
-	AddItem( vsync );
 	AddItem( vidList );
+	AddItem( nvDlss );
+	AddItem( amdFsr );
+	AddItem( sharpening );
+
+	for (auto *pc : pCheckboxes)
+	{
+		AddItem(pc);
+	}
+
+#if DISABLE_RENDERER_API_SWITCH
+	// since we don't have Renderer API change, Apply and Done have the same meaning
+	auto &doneBtn = *AddButton(L("Apply"), L("Apply renderer settings"), PC_DONE, VoidCb(&CMenuVidModes::SetConfigAndHide));
+#else
+	// auto &applyBtn = *AddButton( L( "Apply" ), L( "Apply renderer and window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::SetConfig ) );
+	// auto &doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
+#endif
+
+
+	{
+		#define SPIN_W 300
+		#define SPIN_H 24
+		#define NUM_COLUMNS 2
+		auto GetX = [] (int j)   { return BASE_OFFSET_X + j * (SPIN_W + 72); };
+		auto GetY = [] (float i) { return (int)(230 + i * (SPIN_H * 2)); };
+
+		float i = 0;
+
+
+		// spin-controls
+#if DISABLE_RENDERER_API_SWITCH
+		vidList.SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H);
+		i += 2.5f;
+#else
+		renderers .SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H); vidList.SetRect(GetX(1), GetY(i), SPIN_W, SPIN_H);
+		i += 1.0f;
+		applyBtn  .SetCoord(GetX(0), GetY(i - 0.1f));
+		i += 2.5f;
+#endif
+
+		nvDlss    .SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H); amdFsr .SetRect(GetX(1), GetY(i), SPIN_W, SPIN_H);
+		i += 1.5f;
+
+		sharpening.SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H);
+		i += 1.5f;
+
+
+		// switch-buttons
+		for (int k = 0; k < (int)std::size(pCheckboxes); k++)
+		{
+			if (k % NUM_COLUMNS == 0 && k != 0)
+			{
+				i++;
+			}
+
+			pCheckboxes[k]->SetCoord(GetX(k % NUM_COLUMNS), GetY(i));
+		}
+
+
+		// back button
+		i += 2.0f;
+		doneBtn.SetCoord(GetX(0), GetY(i));
+	}
 
 	renderers.LinkCvar( "r_refdll", CMenuEditable::CVAR_STRING );
 }
@@ -355,8 +510,7 @@ void CMenuVidModes::_VidInit()
 	if( !testModeMsgBox.IsVisible() )
 	{
 		ApplyChanges( );
-		vidList.SetCurrentIndex( prevMode + VID_MODES_POS );
-		windowed.bChecked = !prevFullscreen;
+		Vid_SetCurrentVidModeIndex( prevMode );
 	}
 }
 
