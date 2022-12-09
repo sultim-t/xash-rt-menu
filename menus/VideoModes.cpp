@@ -35,9 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ART_BANNER		"gfx/shell/head_vidmodes"
 
 
-#define DISABLE_RENDERER_API_SWITCH 1
-
-
 static const char *pAmdFsrNames[] =
 {
 	L("Off"),
@@ -62,10 +59,10 @@ static const char *pSharpeningNames[] =
 };
 
 
-class CMenuVidModesModel : public CMenuBaseArrayModel
+class CMenuVidModesModel final : public CMenuBaseArrayModel
 {
 public:
-	void Update()
+    void Update() override
 	{
 		int i;
 
@@ -77,7 +74,7 @@ public:
 		}
 		m_iNumModes = i;
 	}
-	int GetRows() const
+	int GetRows() const override
 	{
 		return m_iNumModes;
 	}
@@ -102,8 +99,8 @@ public:
 	}
 
 private:
-	int m_iNumModes;
-	const char *m_szModes[64];
+    int         m_iNumModes{ 0 };
+    const char* m_szModes[ 64 ]{};
 };
 
 
@@ -148,51 +145,17 @@ private:
 class CMenuVidModes : public CMenuFramework
 {
 private:
-	void _Init();
-	void _VidInit();
-	void Draw(); // put test mode timer here
+    void _Init() override;
+    void _VidInit() override;
+	void Draw() override;
+
 public:
-	CMenuVidModes() : CMenuFramework( "CMenuVidModes" ) { testModeTimer = 0; }
+	CMenuVidModes() : CMenuFramework( "CMenuVidModes" ) {}
 
 	void SetMode( int mode );
 	void SetMode( int w, int h );
-	void SetConfig( );
-	void SetConfigAndHide( );
-	void RevertChanges();
-	void ApplyChanges();
-
-	void GetRendererConfig()
-	{
-		const char *refdll = EngFuncs::GetCvarString( "r_refdll" );
-
-		if( !refdll[0] )
-		{
-			renderers.SetCurrentValue( 0.0f );
-		}
-
-		int i;
-		for( i = 0; i < renderersModel.GetRows(); i++ )
-		{
-			if( !stricmp( renderersModel.GetShortName( i ), refdll ) )
-			{
-				renderers.SetCurrentValue( i );
-				break;
-			}
-		}
-
-		if( i == renderersModel.GetRows() )
-		{
-			renderersModel.Add( refdll );
-			renderers.SetCurrentValue( i );
-		}
-	}
-
-	void WriteRendererConfig()
-	{
-		int i = renderers.GetCurrentValue();
-		EngFuncs::CvarSetString( "r_refdll", renderersModel.GetShortName( i ));
-	}
-
+    void TrySetChosenVidMode();
+	
 	int Vid_GetCurrentVidModeIndex()
 	{
 		return vidListModel.IndexToVidMode(vidList.GetCurrentValue());
@@ -213,21 +176,9 @@ public:
 	CMenuVidModesModel		vidListModel;
 	CMenuSpinControl		vidList;
 
-	CMenuYesNoMessageBox	testModeMsgBox;
-
-	CMenuRenderersModel		renderersModel;
-	CMenuSpinControl		renderers;
-
 	CMenuSpinControl		nvDlss;
 	CMenuSpinControl		amdFsr;
 	CMenuSpinControl		sharpening;
-
-	int prevMode;
-	int prevModeX;
-	int prevModeY;
-	bool prevFullscreen;
-	float testModeTimer;
-	char testModeMsg[256];
 };
 
 
@@ -252,47 +203,16 @@ void CMenuVidModes::SetMode( int mode )
 UI_VidModes_SetConfig
 =================
 */
-void CMenuVidModes::SetConfig( )
+void CMenuVidModes::TrySetChosenVidMode()
 {
-	// called on applyBtn
+	// NOTE: don't call this function frequently,
+	// as there are no checks that width/height are the same
 
-	bool testMode = false;
-	int  currentModeIndex = Vid_GetCurrentVidModeIndex();
-	bool isVidModeChanged = prevMode != currentModeIndex;
-
-	if( isVidModeChanged )
-	{
-		SetMode( currentModeIndex );
-		EngFuncs::CvarSetValue( "vid_mode", currentModeIndex );
-		Vid_SetCurrentVidModeIndex( currentModeIndex );
-	}
-
-	if( testMode )
-	{
-		testModeMsgBox.Show();
-		testModeTimer = gpGlobals->time + 10.0f; // ten seconds should be enough
-	}
-}
-
-void CMenuVidModes::SetConfigAndHide()
-{
-	SetConfig();
-	Hide();
-}
-
-void CMenuVidModes::ApplyChanges()
-{
-	prevMode = EngFuncs::GetCvarFloat( "vid_mode" );
-	prevFullscreen = EngFuncs::GetCvarFloat( "fullscreen" );
-	prevModeX = EngFuncs::GetCvarFloat( "width" );
-	prevModeY = EngFuncs::GetCvarFloat( "height" );
-}
-
-void CMenuVidModes::RevertChanges()
-{
-	EngFuncs::CvarSetValue("fullscreen", prevFullscreen);
+    int modeIndex = Vid_GetCurrentVidModeIndex();
 	
-	SetMode( prevModeX, prevModeY );
+	SetMode( modeIndex );
+    EngFuncs::CvarSetValue( "vid_mode", modeIndex );
+    Vid_SetCurrentVidModeIndex( modeIndex );
 }
 
 void CMenuVidModes::Draw()
@@ -332,21 +252,6 @@ void CMenuVidModes::Draw()
 	}
 
 
-	if (testModeMsgBox.IsVisible())
-	{
-		if (testModeTimer - gpGlobals->time > 0)
-		{
-			snprintf(testModeMsg, sizeof(testModeMsg) - 1, L("Keep this resolution? %i seconds remaining"), (int)(testModeTimer - gpGlobals->time));
-			testModeMsg[sizeof(testModeMsg) - 1] = 0;
-		}
-		else
-		{
-			RevertChanges();
-			testModeMsgBox.Hide();
-		}
-	}
-
-
 	CMenuFramework::Draw();
 }
 
@@ -365,7 +270,6 @@ void CMenuVidModes::_Init( void )
 	vidList.Setup( &vidListModel );
 	vidList.SetCharSize( QM_SMALLFONT );
 	vidList.bUpdateImmediately = true;
-
 
 	vsync.SetNameAndStatus( L( "VSync" ), L( "enable vertical synchronization for RT renderer" ) );
 	vsync.LinkCvar( "rt_bVsync" );
@@ -401,21 +305,6 @@ void CMenuVidModes::_Init( void )
 	};
 
 
-	testModeMsgBox.SetMessage( testModeMsg );
-	testModeMsgBox.onPositive = VoidCb( &CMenuVidModes::ApplyChanges );
-	testModeMsgBox.onNegative = VoidCb( &CMenuVidModes::RevertChanges );
-	testModeMsgBox.Link( this );
-
-
-	renderersModel.Update();
-	renderers.szName = L( "GameUI_Renderer" );
-	renderers.Setup( &renderersModel );
-	renderers.SetCharSize( QM_SMALLFONT );
-	renderers.onCvarGet = VoidCb( &CMenuVidModes::GetRendererConfig );
-	renderers.onCvarWrite = VoidCb( &CMenuVidModes::WriteRendererConfig );
-	renderers.bUpdateImmediately = true;
-
-
 	static CStringArrayModel nvDlssModel(pNvDlssNames, V_ARRAYSIZE(pNvDlssNames));
 	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
 	nvDlss.Setup(&nvDlssModel);
@@ -440,26 +329,20 @@ void CMenuVidModes::_Init( void )
 
 	AddItem( background );
 	AddItem( banner );
-	AddItem( renderers );
 	AddItem( vidList );
 	AddItem( nvDlss );
 	AddItem( amdFsr );
-	AddItem( sharpening );
+	// AddItem( sharpening );
 
 	for (auto *pc : pCheckboxes)
 	{
 		AddItem(pc);
 	}
 
-#if DISABLE_RENDERER_API_SWITCH
-	// since we don't have Renderer API change, Apply and Done have the same meaning
-	auto &doneBtn = *AddButton(L("Apply"), L("Apply renderer settings"), PC_DONE, VoidCb(&CMenuVidModes::SetConfigAndHide));
-#else
-	// auto &applyBtn = *AddButton( L( "Apply" ), L( "Apply renderer and window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::SetConfig ) );
-	// auto &doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
-#endif
-
-
+    auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
+    auto& doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
+	
+	// clang-format off
 	{
 		#define SPIN_W 300
 		#define SPIN_H 24
@@ -471,21 +354,14 @@ void CMenuVidModes::_Init( void )
 
 
 		// spin-controls
-#if DISABLE_RENDERER_API_SWITCH
-		vidList.SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H);
-		i += 2.5f;
-#else
-		renderers .SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H); vidList.SetRect(GetX(1), GetY(i), SPIN_W, SPIN_H);
-		i += 1.0f;
-		applyBtn  .SetCoord(GetX(0), GetY(i - 0.1f));
-		i += 2.5f;
-#endif
+		vidList.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H); applyBtn.SetCoord(	GetX(1), GetY(i - 0.05f));
+		i += 3.0f;
 
-		nvDlss    .SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H); amdFsr .SetRect(GetX(1), GetY(i), SPIN_W, SPIN_H);
-		i += 1.5f;
+		nvDlss.SetRect(		GetX(0), GetY(i), SPIN_W, SPIN_H); amdFsr	.SetRect(	GetX(1), GetY(i), SPIN_W, SPIN_H);
+		i += 2.5f;
 
-		sharpening.SetRect(GetX(0), GetY(i), SPIN_W, SPIN_H);
-		i += 1.5f;
+		//sharpening.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H);
+		//i += 1.5f;
 
 
 		// switch-buttons
@@ -504,18 +380,12 @@ void CMenuVidModes::_Init( void )
 		i += 2.0f;
 		doneBtn.SetCoord(GetX(0), GetY(i));
 	}
-
-	renderers.LinkCvar( "r_refdll", CMenuEditable::CVAR_STRING );
+	// clang-format on
 }
 
 void CMenuVidModes::_VidInit()
 {
-	// don't overwrite prev values
-	if( !testModeMsgBox.IsVisible() )
-	{
-		ApplyChanges( );
-		Vid_SetCurrentVidModeIndex( prevMode );
-	}
+	Vid_SetCurrentVidModeIndex( static_cast< int >( EngFuncs::GetCvarFloat( "vid_mode" ) ) );
 }
 
 ADD_MENU( menu_vidmodes, CMenuVidModes, UI_VidModes_Menu );
