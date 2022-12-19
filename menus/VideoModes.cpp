@@ -43,6 +43,7 @@ static const char *pAmdFsrNames[] =
 	L("Performance"),
 	L("Ultra Performance"),
 };
+#define SHOW_DLSS 0
 static const char *pNvDlssNames[] =
 {
 	L("Off"),
@@ -168,7 +169,6 @@ public:
 
 public:
 	CMenuCheckBox			vsync;
-	CMenuCheckBox			disablePvsCulling;
 	CMenuCheckBox			muzzleFlash;
 	CMenuCheckBox			nearestTextureFiltering;
 	CMenuCheckBox			particlesUntextured;
@@ -217,9 +217,9 @@ void CMenuVidModes::TrySetChosenVidMode()
 
 void CMenuVidModes::Draw()
 {
-	const int nvDlssCvar = (int)EngFuncs::GetCvarFloat("rt_iUpscaleNvDlss");
-	const int amdFsrCvar = (int)EngFuncs::GetCvarFloat("rt_iUpscaleAmdFsr2");
-	const int nvDlssAvailable = (int)EngFuncs::GetCvarFloat("_rt_bDLSSAvailable");
+	const int nvDlssCvar = (int)EngFuncs::GetCvarFloat("rt_upscale_dlss");
+	const int amdFsrCvar = (int)EngFuncs::GetCvarFloat("rt_upscale_fsr2");
+	const int nvDlssAvailable = (int)EngFuncs::GetCvarFloat("_rt_dlss_available");
 
 	if (nvDlssAvailable)
 	{
@@ -272,23 +272,19 @@ void CMenuVidModes::_Init( void )
 	vidList.bUpdateImmediately = true;
 
 	vsync.SetNameAndStatus( L( "VSync" ), L( "enable vertical synchronization for RT renderer" ) );
-	vsync.LinkCvar( "rt_bVsync" );
+	vsync.LinkCvar( "rt_vsync" );
 	vsync.bUpdateImmediately = true;
 
-	disablePvsCulling.SetNameAndStatus( L( "Render all" ), L( "if true, in-engine PVS culling is disabled, e.g. shadows of the objects behind walls will be visible" ) );
-	disablePvsCulling.LinkCvar( "rt_bDisablePvsCulling" );
-	disablePvsCulling.bUpdateImmediately = true;
-
 	muzzleFlash.SetNameAndStatus( L( "Muzzle flash" ), L( "enable muzzle flash light source" ) );
-	muzzleFlash.LinkCvar( "rt_bMuzzleFlashEnable" );
+	muzzleFlash.LinkCvar( "rt_mzlflash" );
 	muzzleFlash.bUpdateImmediately = true;
 
 	nearestTextureFiltering.SetNameAndStatus( L( "Vintage textures" ), L( "disable texture filtering" ) );
-	nearestTextureFiltering.LinkCvar( "rt_bTextureFilterNearest" );
+	nearestTextureFiltering.LinkCvar( "rt_texture_nearest" );
 	nearestTextureFiltering.bUpdateImmediately = true;
 
 	particlesUntextured.SetNameAndStatus( L( "Vintage particles" ), L( "use squares for particles" ) );
-	particlesUntextured.LinkCvar( "rt_bParticlesUntextured" );
+	particlesUntextured.LinkCvar( "rt_particles_notex" );
 	particlesUntextured.bUpdateImmediately = true;
 
 	static CMenuCheckBox _todo_notice;
@@ -300,7 +296,6 @@ void CMenuVidModes::_Init( void )
 		&muzzleFlash,
 		&nearestTextureFiltering,
 		&particlesUntextured,
-		// &disablePvsCulling,
 		&_todo_notice,
 	};
 
@@ -309,28 +304,30 @@ void CMenuVidModes::_Init( void )
 	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
 	nvDlss.Setup(&nvDlssModel);
 	nvDlss.SetCharSize(QM_SMALLFONT);
-	nvDlss.LinkCvar("rt_iUpscaleNvDlss", CMenuEditable::CVAR_VALUE);
+	nvDlss.LinkCvar("rt_upscale_dlss", CMenuEditable::CVAR_VALUE);
 	nvDlss.bUpdateImmediately = true;
 
 	static CStringArrayModel amdFsrModel(pAmdFsrNames, V_ARRAYSIZE(pAmdFsrNames));
 	amdFsr.SetNameAndStatus("AMD FSR 2.1", L("set AMD FidelityFX Super Resolution 2.1"));
 	amdFsr.Setup(&amdFsrModel);
 	amdFsr.SetCharSize(QM_SMALLFONT);
-	amdFsr.LinkCvar("rt_iUpscaleAmdFsr2", CMenuEditable::CVAR_VALUE);
+	amdFsr.LinkCvar("rt_upscale_fsr2", CMenuEditable::CVAR_VALUE);
 	amdFsr.bUpdateImmediately = true;
 
 	static CStringArrayModel sharpeningModel(pSharpeningNames, V_ARRAYSIZE(pSharpeningNames));
 	sharpening.SetNameAndStatus("Sharpening", L("set sharpening to apply on top of image"));
 	sharpening.Setup(&sharpeningModel);
 	sharpening.SetCharSize(QM_SMALLFONT);
-	sharpening.LinkCvar("rt_iSharpeningMode", CMenuEditable::CVAR_VALUE);
+	sharpening.LinkCvar("rt_sharpen", CMenuEditable::CVAR_VALUE);
 	sharpening.bUpdateImmediately = true;
 
 
 	AddItem( background );
 	AddItem( banner );
 	AddItem( vidList );
+#if SHOW_DLSS
 	AddItem( nvDlss );
+#endif
 	AddItem( amdFsr );
 	// AddItem( sharpening );
 
@@ -356,8 +353,12 @@ void CMenuVidModes::_Init( void )
 		// spin-controls
 		vidList.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H); applyBtn.SetCoord(	GetX(1), GetY(i - 0.05f));
 		i += 3.0f;
-
+		
+#if SHOW_DLSS
 		nvDlss.SetRect(		GetX(0), GetY(i), SPIN_W, SPIN_H); amdFsr	.SetRect(	GetX(1), GetY(i), SPIN_W, SPIN_H);
+#else
+		amdFsr	.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H);
+#endif
 		i += 2.5f;
 
 		//sharpening.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H);
