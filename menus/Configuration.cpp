@@ -57,10 +57,6 @@ void CMenuOptions::_Init( void )
 	AddItem( background );
 	AddItem( banner );
 #if XASH_RAYTRACING
-	// Directly to "video modes", skipping "video" menu
-	AddButton(L("Graphics"), L("Rendering API settings, window size"),
-			  PC_VID_MODES, UI_VidModes_Menu, QMF_NOTIFY);
-
 	AddButton(L("GameUI_Audio"), L("Sound volume and quality"),
 			  PC_AUDIO, UI_Audio_Menu, QMF_NOTIFY);
 	AddButton(L("Controls"), L("Keyboard, mouse and gamepad settings"),

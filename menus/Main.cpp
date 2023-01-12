@@ -68,6 +68,9 @@ private:
 	CMenuPicButton	customGame;
 	CMenuPicButton	previews;
 	CMenuPicButton	quit;
+#if XASH_RAYTRACING
+	CMenuPicButton	graphics;
+#endif
 
 	// buttons on top right. Maybe should be drawn if fullscreen == 1?
 	CMenuBitmap	minimizeBtn;
@@ -192,6 +195,13 @@ void CMenuMain::_Init( void )
 	configuration.iFlags |= QMF_NOTIFY;
 	configuration.onReleased = UI_Options_Menu;
 
+#if XASH_RAYTRACING
+    graphics.SetNameAndStatus( L( "Graphics" ), L( "Rendering API settings, window size" ) );
+    graphics.SetPicture( PC_VID_MODES );
+    graphics.iFlags |= QMF_NOTIFY;
+    graphics.onReleased = UI_VidModes_Menu;
+#endif
+
 	saveRestore.iFlags |= QMF_NOTIFY;
 
 	customGame.SetNameAndStatus( L( "GameUI_ChangeGame" ), L( "StringsList_530" ) );
@@ -258,6 +268,7 @@ void CMenuMain::_Init( void )
 	AddItem( saveRestore );
 	AddItem( multiPlayer );
 	AddItem( configuration );
+    AddItem( graphics );
 
 	if ( bCustomGame )
 		AddItem( customGame );
@@ -330,13 +341,12 @@ void CMenuMain::VidInit( bool connected )
     multiPlayer.SetCoord( BASE_OFFSET_X, 380 );
     configuration.SetCoord( BASE_OFFSET_X, 430 );
     customGame.SetCoord( BASE_OFFSET_X, 480 );
+#if !XASH_RAYTRACING
     previews.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 530 : 480 );
-#if XASH_RAYTRACING
-	// no 'previews' button
-    quit.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 530 : 480 );
 #else
-    quit.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 580 : 530 );
+    graphics.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 530 : 480 );
 #endif
+    quit.SetCoord( BASE_OFFSET_X, ( bCustomGame ) ? 580 : 530 );
 
     int offsetY = connected ? 150 : 100;
     console.pos.y += offsetY;
@@ -347,7 +357,11 @@ void CMenuMain::VidInit( bool connected )
     saveRestore.pos.y += offsetY;
     multiPlayer.pos.y += offsetY;
     customGame.pos.y += offsetY;
+#if !XASH_RAYTRACING
     previews.pos.y += offsetY;
+#else
+    graphics.pos.y += offsetY;
+#endif
     quit.pos.y += offsetY;
 }
 
