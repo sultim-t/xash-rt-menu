@@ -24,6 +24,10 @@ GNU General Public License for more details.
 #include <stdlib.h>
 #include "Framework.h"
 
+#if XASH_RAYTRACING
+extern bool rt_isdrawing_main;
+#endif
+
 CMenuPicButton::CMenuPicButton() : BaseClass()
 {
 	bEnableTransitions = true;
@@ -256,6 +260,41 @@ void CMenuPicButton::Draw( )
 		uint textflags = ETF_NOSIZELIMIT | ETF_FORCECOL;
 
 		SetBits( textflags, ETF_ADDITIVE );
+
+#if XASH_RAYTRACING
+		// draw solid background only in main menu with dynamic background
+        if( rt_isdrawing_main && EngFuncs::GetCvarFloat( "cl_background" ) )
+        {
+            int strWidth   = 0;
+            int charHeight = m_scChSize;
+
+            if( szName && szName[ 0 ] != '\0' )
+            {
+                int i = 0;
+                while( char c = szName[ i++ ] )
+                {
+                    // unicode
+                    int uch       = EngFuncs::UtfProcessChar( static_cast< unsigned char >( c ) );
+                    int charWidth = g_FontMgr->GetCharacterWidthScaled( font, uch, charHeight );
+
+                    strWidth += charWidth;
+                }
+            }
+
+            if( strWidth > 0 )
+            {
+                int pad = 8;
+
+                int cx = m_scPos.x - pad;
+                int cy = m_scPos.y - pad;
+
+                int cw = pad + strWidth + pad;
+                int ch = pad + charHeight + pad;
+
+                EngFuncs::engfuncs.pfnFillRGBA( cx, cy, cw, ch, 0, 0, 0, 235 );
+            }
+        }
+#endif
 
 		if( iFlags & QMF_GRAYED )
 		{

@@ -37,12 +37,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ART_CLOSEBTN_F	"gfx/shell/cls_f"
 #define ART_CLOSEBTN_D	"gfx/shell/cls_d"
 
+#if XASH_RAYTRACING
+bool rt_isdrawing_main = false;
+#endif
+
 class CMenuMain: public CMenuFramework
 {
 public:
 	CMenuMain() : CMenuFramework( "CMenuMain" ) { }
 
 	bool KeyDown( int key ) override;
+
+#if XASH_RAYTRACING
+    void Draw() override
+    {
+        rt_isdrawing_main = true;
+		CMenuFramework::Draw();
+        rt_isdrawing_main = false;
+    }
+#endif
 
 private:
 	void _Init() override;

@@ -20,6 +20,10 @@ GNU General Public License for more details.
 #include "Utils.h"
 #include "BaseWindow.h"
 
+#if XASH_RAYTRACING
+extern bool rt_isdrawing_main;
+#endif
+
 bool CMenuBackgroundBitmap::s_bEnableLogoMovie = false;
 Size CMenuBackgroundBitmap::s_BackgroundImageSize;
 CUtlVector<CMenuBackgroundBitmap::bimage_t> CMenuBackgroundBitmap::s_Backgrounds;
@@ -55,7 +59,12 @@ void CMenuBackgroundBitmap::VidInit()
 
 void CMenuBackgroundBitmap::DrawInGameBackground()
 {
+#if !XASH_RAYTRACING
 	UI_FillRect( m_scPos, m_scSize, uiColorBlack );
+#else
+	// darker
+    UI_FillRect( m_scPos, m_scSize, 0xC8000000 );
+#endif
 }
 
 void CMenuBackgroundBitmap::DrawColor()
@@ -146,6 +155,15 @@ void CMenuBackgroundBitmap::Draw()
 	{
 		if( EngFuncs::GetCvarFloat( "cl_background" ) )
 		{
+#if XASH_RAYTRACING
+			// don't tint in main menu with dynamic background,
+			// as buttons already readable
+            if( !rt_isdrawing_main )
+            {
+                DrawInGameBackground();
+            }
+#endif
+
 			return;
 		}
 
