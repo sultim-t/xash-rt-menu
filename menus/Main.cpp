@@ -53,8 +53,7 @@ private:
 	void QuitDialog( void *pExtra = NULL );
 	void DisconnectCb();
 	void DisconnectDialogCb();
-
-	CMenuPicButton	console;
+	
 	class CMenuMainBanner : public CMenuBannerBitmap
 	{
 	public:
@@ -63,12 +62,10 @@ private:
 
 	CMenuPicButton	resumeGame;
 	CMenuPicButton	disconnect;
-	CMenuPicButton	newGame;
+	CMenuPicButton	singleplayer;
     CMenuPicButton	graphics;
     CMenuPicButton	audio;
     CMenuPicButton	controls;
-	CMenuPicButton	load;
-	CMenuPicButton	save;
 	CMenuPicButton	multiPlayer;
 	CMenuPicButton	customGame;
 	CMenuPicButton	quit;
@@ -156,17 +153,7 @@ void CMenuMain::_Init( void )
 	else
 #endif
 		bCustomGame = false;
-
-	// console
-	console.SetNameAndStatus( L( "GameUI_Console" ), L( "Show console" ) );
-	console.iFlags |= QMF_NOTIFY;
-	console.SetPicture( PC_CONSOLE );
-	SET_EVENT_MULTI( console.onReleased,
-	{
-		UI_SetActiveMenu( FALSE );
-		EngFuncs::KEY_SetDest( KEY_CONSOLE );
-	});
-
+	
 	resumeGame.SetNameAndStatus( L( "Resume" ), L( "StringsList_188" ) );
 	resumeGame.SetPicture( PC_RESUME_GAME );
 	resumeGame.iFlags |= QMF_NOTIFY;
@@ -177,10 +164,10 @@ void CMenuMain::_Init( void )
 	disconnect.iFlags |= QMF_NOTIFY;
 	disconnect.onReleased = VoidCb( &CMenuMain::DisconnectDialogCb );
 
-	newGame.SetNameAndStatus( L( "New game" ), L( "StringsList_189" ) );
-	newGame.SetPicture( PC_NEW_GAME );
-	newGame.iFlags |= QMF_NOTIFY;
-	newGame.onReleased = UI_NewGame_Menu;
+	singleplayer.SetNameAndStatus( L( "Campaign" ), L( "Start new game, load or create a save" ) );
+	singleplayer.SetPicture( PC_SAVE_LOAD_GAME );
+	singleplayer.onReleased = UI_SaveLoad_Menu;
+	singleplayer.iFlags |= QMF_NOTIFY;
 
 	multiPlayer.SetNameAndStatus( L( "GameUI_Multiplayer" ), L( "StringsList_198" ) );
 	multiPlayer.SetPicture( PC_MULTIPLAYER );
@@ -202,16 +189,6 @@ void CMenuMain::_Init( void )
     controls.iFlags |= QMF_NOTIFY;
     controls.onReleased = UI_Controls_Menu;
 
-    load.SetNameAndStatus( L( "Load" ), L( "StringsList_191" ) );
-    load.SetPicture( PC_LOAD_GAME );
-    load.onReleased = UI_LoadGame_Menu;
-	load.iFlags |= QMF_NOTIFY;
-
-    save.SetNameAndStatus( L( "Save" ), L( "GameUI_SaveGameHelp" ) );
-    save.SetPicture( PC_SAVE_GAME );
-    save.onReleased = UI_SaveGame_Menu;
-	save.iFlags |= QMF_NOTIFY;
-
 	customGame.SetNameAndStatus( L( "GameUI_ChangeGame" ), L( "StringsList_530" ) );
 	customGame.SetPicture( PC_CUSTOM_GAME );
 	customGame.iFlags |= QMF_NOTIFY;
@@ -221,25 +198,14 @@ void CMenuMain::_Init( void )
 	quit.SetPicture( PC_QUIT );
 	quit.iFlags |= QMF_NOTIFY;
 	quit.onReleased = MenuCb( &CMenuMain::QuitDialog );
-
-	if ( gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY || gMenu.m_gameinfo.startmap[0] == 0 )
-		newGame.SetGrayed( true );
-
+	
 	if ( gMenu.m_gameinfo.gamemode == GAME_SINGLEPLAYER_ONLY )
 		multiPlayer.SetGrayed( true );
-
-	if ( gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY )
-	{
-        load.SetGrayed( true );
-		save.SetGrayed( true );
-	}
-
+	
 	// server.dll needs for reading savefiles or startup newgame
 	if( !EngFuncs::CheckGameDll( ))
 	{
-		load.SetGrayed( true );
-		save.SetGrayed( true );
-		newGame.SetGrayed( true );
+        singleplayer.SetGrayed( true );
 	}
 
 	dialog.Link( this );
@@ -248,20 +214,14 @@ void CMenuMain::_Init( void )
 	AddItem( banner );
 
 	AddItem( resumeGame );
-    if( gpGlobals->developer )
-    {
-        AddItem( console );
-    }
 
-	AddItem( newGame );
-	AddItem( load );
-	AddItem( save );
+	AddItem( singleplayer );
 
 	AddItem( multiPlayer );
 
     AddItem( graphics );
-    AddItem( audio );
     AddItem( controls );
+    AddItem( audio );
 
 	AddItem( quit );
     AddItem( disconnect );
@@ -272,10 +232,10 @@ void CMenuMain::_Init( void )
 
 void PlaceOnLine( std::initializer_list< CMenuPicButton* > arr, int y )
 {
-    int i = 1;
+    int i = 0;
     for( auto* b : arr )
     {
-        b->SetCoord( BASE_OFFSET_X * i, y );
+        b->SetCoord( BASE_OFFSET_X + ( i * 150 ), y );
         i++;
     }
 }
@@ -289,29 +249,38 @@ void CMenuMain::VidInit( bool connected )
 {
     bool isSingle = gpGlobals->maxClients < 2;
 
-    bool showSave       = CL_IsActive() && isSingle;
     bool showResume     = connected;
-    bool showDisconnect = connected && CL_IsActive() && !isSingle;
-	
+    bool showDisconnect = connected && !isSingle;
+
     resumeGame.SetVisibility( showResume );
     disconnect.SetVisibility( showDisconnect );
-    save.SetVisibility( showSave );
 
-	int base = 280;
+	struct Offset
+    {
+        int base = 350;
+        int Next()
+        {
+            int c = base;
+            base += 50;
+            return c;
+        }
+        void Padding() { base += 20; }
+    } offset;
 
-	if( showResume )
-        PlaceOnLine( { &resumeGame, &console }, base + 0 );
-    else
-        PlaceOnLine( { &console }, base + 0 );
+    if( showResume )
+    {
+        PlaceOnLine( { &resumeGame }, offset.Next() );
+        offset.Padding();
+    }
 
-    PlaceOnLine( { &newGame, &load, &save }, base + 100 );
-    PlaceOnLine( { &multiPlayer }, base + 150 );
+    PlaceOnLine( { &singleplayer }, offset.Next() );
+    PlaceOnLine( { &multiPlayer }, offset.Next() );
+    offset.Padding();
 
-    PlaceOnLine( { &graphics, &audio, &controls }, base + 250 );
+    PlaceOnLine( { &graphics, &controls, &audio }, offset.Next() );
+    offset.Padding();
 
-    PlaceOnLine( { &quit, &disconnect, &customGame }, base + 350 );
-
-    console.CalcPosition();
+    PlaceOnLine( { &quit, &disconnect, &customGame }, offset.Next() );
 }
 
 void CMenuMain::_VidInit()

@@ -30,7 +30,12 @@ class CMenuSaveLoad : public CMenuFramework
 public:
 	CMenuSaveLoad() : CMenuFramework( "CMenuSaveLoad" ) { }
 private:
-	void _Init();
+	void _Init() override;
+	void _VidInit() override;
+
+	CMenuPicButton* newgame{ nullptr };
+	CMenuPicButton* save{ nullptr };
+	CMenuPicButton* load{ nullptr };
 
 	CMenuAction	hintMessage;
 	char		hintText[MAX_HINT_TEXT];
@@ -43,9 +48,11 @@ UI_SaveLoad_Init
 */
 void CMenuSaveLoad::_Init( void )
 {
-	snprintf( hintText, sizeof( hintText ),
-		L( "During play, you can quickly save your game by pressing %s.\n"
-		"Load this game again by pressing %s." ),
+    snprintf( hintText,
+              sizeof( hintText ),
+              L( "During play:\n"
+                 "        Press %s - to quickly save the game\n"
+                 "        Press %s - to load that saved game" ),
 		EngFuncs::KeynumToString( KEY_GetKey( "save quick" ) ),
 		EngFuncs::KeynumToString( KEY_GetKey( "load quick" ) ) );
 
@@ -55,14 +62,59 @@ void CMenuSaveLoad::_Init( void )
 	hintMessage.colorBase = uiColorHelp;
 	hintMessage.SetCharSize( QM_SMALLFONT );
 	hintMessage.szName = hintText;
-	hintMessage.SetCoord( 360, 480 );
+	hintMessage.SetCoord( 440, 280 );
 
 	AddItem( background );
 	AddItem( banner );
-	AddButton( L( "GameUI_LoadGame" ), L( "GameUI_LoadGameHelp" ), PC_LOAD_GAME, UI_LoadGame_Menu, QMF_NOTIFY );
-	AddButton( L( "GameUI_SaveGame" ), L( "GameUI_SaveGameHelp" ), PC_SAVE_GAME, UI_SaveGame_Menu, QMF_NOTIFY );
-	AddButton( L( "Done" ), L( "Go back to the Main menu" ), PC_DONE, VoidCb( &CMenuSaveLoad::Hide ), QMF_NOTIFY );
+
+	newgame = AddButton(
+        L( "New game" ), L( "StringsList_189" ), PC_NEW_GAME, UI_NewGame_Menu, QMF_NOTIFY );
+	load = AddButton( L( "Load" ), L( "GameUI_LoadGameHelp" ), PC_LOAD_GAME, UI_LoadGame_Menu, QMF_NOTIFY );
+    save = AddButton(
+        L( "Save" ), L( "GameUI_SaveGameHelp" ), PC_SAVE_GAME, UI_SaveGame_Menu, QMF_NOTIFY );
+	AddButton( L( "Back" ), L( "Go back to the Main menu" ), PC_DONE, VoidCb( &CMenuSaveLoad::Hide ), QMF_NOTIFY );
 	AddItem( hintMessage );
+}
+
+void CMenuSaveLoad::_VidInit()
+{
+    if( !save || !load || !newgame )
+    {
+        return;
+    }
+
+    bool isSingle = gpGlobals->maxClients < 2;
+
+    bool showNewGame = true;
+    bool showLoad = true;
+    bool showSave = true;
+
+    if( gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY || gMenu.m_gameinfo.startmap[ 0 ] == 0 )
+    {
+        showNewGame = false;
+    }
+
+    if( gMenu.m_gameinfo.gamemode == GAME_MULTIPLAYER_ONLY )
+    {
+        showLoad = false;
+        showSave = false;
+    }
+
+	if( !EngFuncs::CheckGameDll() )
+    {
+        showNewGame = false;
+        showLoad = false;
+        showSave = false;
+    }
+
+    if( !CL_IsActive() || !isSingle )
+    {
+        showSave = false;
+    }
+
+    newgame->SetGrayed( !showNewGame );
+    load->SetGrayed( !showLoad );
+    save->SetGrayed( !showSave );
 }
 
 ADD_MENU( menu_saveload, CMenuSaveLoad, UI_SaveLoad_Menu );

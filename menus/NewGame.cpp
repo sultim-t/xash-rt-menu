@@ -150,7 +150,7 @@ void CMenuNewGame::_Init( void )
 	norm->onReleasedClActive.pExtra = &normCallback;
 	hard->onReleasedClActive.pExtra = &hardCallback;
 
-	AddButton( L( "GameUI_Cancel" ), L( "Go back to the Main menu" ), PC_CANCEL, VoidCb( &CMenuNewGame::Hide ), QMF_NOTIFY );
+	AddButton( L( "Back" ), L( "Go back to the Main menu" ), PC_CANCEL, VoidCb( &CMenuNewGame::Hide ), QMF_NOTIFY );
 
 	msgBox.HighlightChoice( CMenuYesNoMessageBox::HIGHLIGHT_NO );
 	msgBox.Link( this );
@@ -167,7 +167,7 @@ void CMenuNewGame::TryAddHazardCourse()
 
 	SET_EVENT(hazardCourseCallback, CMenuNewGame::HazardCourseCb());
 
-	CMenuPicButton *hzrd = AddButton(L("GameUI_TrainingRoom"), L("StringsList_190"), PC_HAZARD_COURSE, hazardCourseCallback, QMF_NOTIFY);
+	CMenuPicButton *hzrd = AddButton(L("Hazard Course"), L("StringsList_190"), PC_HAZARD_COURSE, hazardCourseCallback, QMF_NOTIFY);
 	hzrd->onReleasedClActive = HazardCourseDialogCb;
 	hzrd->onReleasedClActive.pExtra = &hazardCourseCallback;
 
