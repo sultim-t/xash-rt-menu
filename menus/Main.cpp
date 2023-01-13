@@ -167,47 +167,47 @@ void CMenuMain::_Init( void )
 #endif
 		bCustomGame = false;
 	
-	resumeGame.SetNameAndStatus( L( "Resume" ), L( "StringsList_188" ) );
+	resumeGame.SetNameAndStatus( L( "Resume" ), L( "" ) );
 	resumeGame.SetPicture( PC_RESUME_GAME );
 	resumeGame.iFlags |= QMF_NOTIFY;
 	resumeGame.onReleased = UI_CloseMenu;
 
-	disconnect.SetNameAndStatus( L( "GameUI_GameMenu_Disconnect" ), L( "Disconnect from server" ) );
+	disconnect.SetNameAndStatus( L( "GameUI_GameMenu_Disconnect" ), L( "" ) );
 	disconnect.SetPicture( PC_DISCONNECT );
 	disconnect.iFlags |= QMF_NOTIFY;
 	disconnect.onReleased = VoidCb( &CMenuMain::DisconnectDialogCb );
 
-	singleplayer.SetNameAndStatus( L( "Campaign" ), L( "Start new game, load or create a save" ) );
+	singleplayer.SetNameAndStatus( L( "Campaign" ), L( "" ) );
 	singleplayer.SetPicture( PC_SAVE_LOAD_GAME );
 	singleplayer.onReleased = UI_SaveLoad_Menu;
 	singleplayer.iFlags |= QMF_NOTIFY;
 
-	multiPlayer.SetNameAndStatus( L( "GameUI_Multiplayer" ), L( "StringsList_198" ) );
+	multiPlayer.SetNameAndStatus( L( "GameUI_Multiplayer" ), L( "" ) );
 	multiPlayer.SetPicture( PC_MULTIPLAYER );
 	multiPlayer.iFlags |= QMF_NOTIFY;
 	multiPlayer.onReleased = UI_MultiPlayer_Menu;
 
-    graphics.SetNameAndStatus( L( "Graphics" ), L( "Rendering API settings, window size" ) );
+    graphics.SetNameAndStatus( L( "Graphics" ), L( "" ) );
     graphics.SetPicture( PC_VID_MODES );
     graphics.iFlags |= QMF_NOTIFY;
     graphics.onReleased = UI_VidModes_Menu;
 
-    audio.SetNameAndStatus( L( "GameUI_Audio" ), L( "Sound volume and quality" ) );
+    audio.SetNameAndStatus( L( "GameUI_Audio" ), L( "" ) );
     audio.SetPicture( PC_AUDIO );
     audio.iFlags |= QMF_NOTIFY;
     audio.onReleased = UI_Audio_Menu;
 
-    controls.SetNameAndStatus( L( "Controls" ), L( "Keyboard, mouse and gamepad settings" ) );
+    controls.SetNameAndStatus( L( "Controls" ), L( "" ) );
     controls.SetPicture( PC_CONTROLS );
     controls.iFlags |= QMF_NOTIFY;
     controls.onReleased = UI_Controls_Menu;
 
-	customGame.SetNameAndStatus( L( "GameUI_ChangeGame" ), L( "StringsList_530" ) );
+	customGame.SetNameAndStatus( L( "GameUI_ChangeGame" ), L( "" ) );
 	customGame.SetPicture( PC_CUSTOM_GAME );
 	customGame.iFlags |= QMF_NOTIFY;
 	customGame.onReleased = UI_CustomGame_Menu;
 
-	quit.SetNameAndStatus( L( "GameUI_GameMenu_Quit" ), L( "GameUI_QuitConfirmationText" ) );
+	quit.SetNameAndStatus( L( "GameUI_GameMenu_Quit" ), L( "" ) );
 	quit.SetPicture( PC_QUIT );
 	quit.iFlags |= QMF_NOTIFY;
 	quit.onReleased = MenuCb( &CMenuMain::QuitDialog );
