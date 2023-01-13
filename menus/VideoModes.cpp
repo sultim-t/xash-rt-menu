@@ -325,6 +325,8 @@ void CMenuVidModes::_Init( void )
 	AddItem( background );
 	AddItem( banner );
 	AddItem( vidList );
+    auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
+
 #if SHOW_DLSS
 	AddItem( nvDlss );
 #endif
@@ -336,7 +338,6 @@ void CMenuVidModes::_Init( void )
 		AddItem(pc);
 	}
 
-    auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
     auto& doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
 	
 	// clang-format off
