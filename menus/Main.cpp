@@ -264,7 +264,7 @@ void CMenuMain::VidInit( bool connected )
             base += 50;
             return c;
         }
-        void Padding() { base += 20; }
+        void Padding() { base += 0; }
     } offset;
 
     if( showResume )

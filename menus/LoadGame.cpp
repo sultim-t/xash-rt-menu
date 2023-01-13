@@ -282,7 +282,11 @@ void CMenuLoadGame::_Init( void )
 	remove.onReleased = msgBox.MakeOpenEvent();
 	remove.SetCoord( BASE_OFFSET_X, 280 );
 
+#if !XASH_RAYTRACING
 	cancel.SetNameAndStatus( L( "GameUI_Cancel" ), L( "Return back to main menu" ) );
+#else
+	cancel.SetNameAndStatus( L( "Back" ), L( "Return back to main menu" ) );
+#endif
 	cancel.SetPicture( PC_CANCEL );
 	cancel.onReleased = VoidCb( &CMenuLoadGame::Hide );
 	cancel.SetCoord( BASE_OFFSET_X, 330 );
@@ -312,6 +316,10 @@ void CMenuLoadGame::_Init( void )
 	AddItem( cancel );
 	AddItem( levelShot );
 	AddItem( savesList );
+
+#if XASH_RAYTRACING
+    cancel.pos.y += 15;
+#endif
 }
 
 void CMenuLoadGame::LoadGame()

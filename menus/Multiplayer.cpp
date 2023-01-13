@@ -71,9 +71,12 @@ void CMenuMultiplayer::_Init( void )
 	AddButton( L( "LAN game" ), L( "Set up the game on the local area network" ), PC_LAN_GAME, UI_LanGame_Menu, QMF_NOTIFY );
 	AddButton( L( "GameUI_GameMenu_Customize" ), L( "Choose your player name, and select visual options for your character" ), PC_CUSTOMIZE, UI_PlayerSetup_Menu, QMF_NOTIFY );
 #if !XASH_RAYTRACING
-    AddButton( L( "Controls" ), L( "Change keyboard and mouse settings" ), PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY );
+	AddButton( L( "Controls" ), L( "Change keyboard and mouse settings" ), PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY );
+	AddButton( L( "Done" ), L( "Go back to the Main menu" ), PC_DONE, VoidCb( &CMenuMultiplayer::Hide ), QMF_NOTIFY );
+#else
+    auto *back = AddButton( L( "Back" ), L( "Go back to the Main menu" ), PC_DONE, VoidCb( &CMenuMultiplayer::Hide ), QMF_NOTIFY );
+    back->pos.y += 15;
 #endif
-    AddButton( L( "Back" ), L( "Go back to the Main menu" ), PC_DONE, VoidCb( &CMenuMultiplayer::Hide ), QMF_NOTIFY );
 
 	msgBox.SetMessage( L( "It is recomended to enable client movement prediction.\nPress OK to enable it now or enable it later in ^5(Multiplayer/Customize)" ) );
 	msgBox.SetPositiveButton( L( "GameUI_OK" ), PC_OK );

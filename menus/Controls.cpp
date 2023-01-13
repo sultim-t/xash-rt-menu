@@ -411,10 +411,13 @@ void CMenuControls::_Init( void )
             EngFuncs::KEY_SetDest( KEY_CONSOLE );
         } );
     }
-	AddButton(L("GameUI_OK"), L("Save changed and return to configuration menu"), PC_DONE,
+	auto* ok = AddButton(L("GameUI_OK"), L("Save changed and return to configuration menu"), PC_DONE,
 			  VoidCb(&CMenuControls::SaveAndPopMenu));
-	AddButton(L("GameUI_Cancel"), L("Discard changes and return to configuration menu"), PC_CANCEL,
+	auto* cancel = AddButton(L("GameUI_Cancel"), L("Discard changes and return to configuration menu"), PC_CANCEL,
 			  VoidCb(&CMenuControls::Cancel));
+
+	ok->pos.y += 15;
+    cancel->pos.y += 15;
 #else
 	AddButton( L( "GameUI_UseDefaults" ), L( "GameUI_KeyboardSettingsText" ), PC_USE_DEFAULTS, msgBox2.MakeOpenEvent() );
 	AddButton( L( "Adv. Controls" ), L( "Change mouse sensitivity, enable autoaim, mouselook and crosshair" ), PC_ADV_CONTROLS, UI_AdvControls_Menu );
