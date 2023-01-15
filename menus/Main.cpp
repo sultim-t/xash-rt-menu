@@ -270,7 +270,7 @@ void CMenuMain::VidInit( bool connected )
 
 	struct Offset
     {
-        int base = 350;
+        int base = 450;
         int Next()
         {
             int c = base;
