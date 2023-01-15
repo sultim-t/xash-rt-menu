@@ -62,8 +62,8 @@ void CMenuBackgroundBitmap::DrawInGameBackground()
 #if !XASH_RAYTRACING
 	UI_FillRect( m_scPos, m_scSize, uiColorBlack );
 #else
-	// darker
-    UI_FillRect( m_scPos, m_scSize, 0xC8000000 );
+	// darker, cover everything whole screen
+    UI_FillRect( { 0, 0 }, { int( ScreenWidth ), int( ScreenHeight ) }, 0xC8000000 );
 #endif
 }
 
