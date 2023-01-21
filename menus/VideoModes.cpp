@@ -43,7 +43,7 @@ static const char *pAmdFsrNames[] =
 	L("Performance"),
 	L("Ultra Performance"),
 };
-#define SHOW_DLSS 0
+#define SHOW_DLSS 1
 static const char *pNvDlssNames[] =
 {
 	L("Off"),
@@ -57,6 +57,19 @@ static const char *pSharpeningNames[] =
 	L("Off"),
 	L("Naive"),
 	L("AMD CAS"),
+};
+static const char* pVolumetricNames[] = {
+	L("Off"),
+	L("Simple"),
+	L("Volumetric"),
+};
+// must match RT_VINTAGE enum from gl_rmain.c
+static const char* pVintageNames[] = {
+    L( "Off" ),
+    L( "CRT" ),
+    L( "200p" ),
+    L( "480p" ),
+    L( "720p" ),
 };
 
 
@@ -172,13 +185,16 @@ public:
 	CMenuCheckBox			muzzleFlash;
 	CMenuCheckBox			nearestTextureFiltering;
 	CMenuCheckBox			particlesUntextured;
+	CMenuCheckBox			classic;
+	CMenuCheckBox			twoBounces;
 
 	CMenuVidModesModel		vidListModel;
 	CMenuSpinControl		vidList;
 
 	CMenuSpinControl		nvDlss;
 	CMenuSpinControl		amdFsr;
-	CMenuSpinControl		sharpening;
+    CMenuSpinControl        volumetric;
+    CMenuSpinControl        vintage;
 };
 
 
@@ -217,40 +233,14 @@ void CMenuVidModes::TrySetChosenVidMode()
 
 void CMenuVidModes::Draw()
 {
-	const int nvDlssCvar = (int)EngFuncs::GetCvarFloat("rt_upscale_dlss");
-	const int amdFsrCvar = (int)EngFuncs::GetCvarFloat("rt_upscale_fsr2");
 	const int nvDlssAvailable = (int)EngFuncs::GetCvarFloat("_rt_dlss_available");
 
-	if (nvDlssAvailable)
-	{
-		if (nvDlssCvar == 0 && amdFsrCvar == 0)
-		{
-			nvDlss.SetGrayed(false);
-			amdFsr.SetGrayed(false);
-		}
-		else if (nvDlssCvar == 0 && amdFsrCvar != 0)
-		{
-			nvDlss.SetGrayed(true);
-			amdFsr.SetGrayed(false);
-		}
-		else if (nvDlssCvar != 0 && amdFsrCvar == 0)
-		{
-			nvDlss.SetGrayed(false);
-			amdFsr.SetGrayed(true);
-		}
-		else
-		{
-			// were unsafely modified by cvars directly, gray both of them
-			nvDlss.SetGrayed(true);
-			amdFsr.SetGrayed(true);
-		}
-	}
-	else
-	{
-		nvDlss.SetGrayed(true);
-		amdFsr.SetGrayed(false);
-	}
+    nvDlss.SetGrayed( !nvDlssAvailable );
+    amdFsr.SetGrayed( false );
 
+	amdFsr.UpdateCvar();
+    nvDlss.UpdateCvar();
+	vintage.UpdateCvar();
 
 	CMenuFramework::Draw();
 }
@@ -287,39 +277,73 @@ void CMenuVidModes::_Init( void )
 	particlesUntextured.LinkCvar( "rt_particles_notex" );
 	particlesUntextured.bUpdateImmediately = true;
 
-	static CMenuCheckBox _todo_notice;
-	_todo_notice.SetNameAndStatus( L( "_ TODO: LINK CVARS _" ), L( "" ) );
-
-	CMenuBaseItem *pCheckboxes[] =
-	{
-		&vsync,
-		&muzzleFlash,
-		&nearestTextureFiltering,
-		&particlesUntextured,
-		&_todo_notice,
-	};
+    classic.SetNameAndStatus( L( "Classic lighting" ), L( "don't use ray tracing for illumination" ) );
+    classic.LinkCvar( "rt_classic" );
+    classic.bUpdateImmediately = true;
 
 
-	static CStringArrayModel nvDlssModel(pNvDlssNames, V_ARRAYSIZE(pNvDlssNames));
+	static CStringArrayModel nvDlssModel( pNvDlssNames, std::size( pNvDlssNames ) );
 	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
 	nvDlss.Setup(&nvDlssModel);
 	nvDlss.SetCharSize(QM_SMALLFONT);
 	nvDlss.LinkCvar("rt_upscale_dlss", CMenuEditable::CVAR_VALUE);
 	nvDlss.bUpdateImmediately = true;
 
-	static CStringArrayModel amdFsrModel(pAmdFsrNames, V_ARRAYSIZE(pAmdFsrNames));
+	static CStringArrayModel amdFsrModel( pAmdFsrNames, std::size( pAmdFsrNames ) );
 	amdFsr.SetNameAndStatus("AMD FSR 2.1", L("set AMD FidelityFX Super Resolution 2.1"));
 	amdFsr.Setup(&amdFsrModel);
 	amdFsr.SetCharSize(QM_SMALLFONT);
 	amdFsr.LinkCvar("rt_upscale_fsr2", CMenuEditable::CVAR_VALUE);
 	amdFsr.bUpdateImmediately = true;
 
-	static CStringArrayModel sharpeningModel(pSharpeningNames, V_ARRAYSIZE(pSharpeningNames));
+    static CStringArrayModel vintageModel( pVintageNames, std::size( pVintageNames ) );
+    vintage.SetNameAndStatus( "Vintage", L( "set vintage effects technique" ) );
+    vintage.Setup( &vintageModel );
+    vintage.SetCharSize( QM_SMALLFONT );
+    vintage.LinkCvar( "rt_ef_vintage", CMenuEditable::CVAR_VALUE );
+    vintage.bUpdateImmediately = true;
+	
+    nvDlss.onCvarWrite = []( CMenuBaseItem* pSelf, void* pExtra ) {
+        int val = int( dynamic_cast< CMenuEditable* >( pSelf )->CvarValue() );
+        EngFuncs::CvarSetValue( "rt_upscale_dlss", float( val ) );
+        if( val != 0 )
+        {
+            EngFuncs::CvarSetValue( "rt_upscale_fsr2", 0 );
+            EngFuncs::CvarSetValue( "rt_ef_vintage", 0 );
+        }
+    };
+    amdFsr.onCvarWrite = []( CMenuBaseItem* pSelf, void* pExtra ) {
+        int val = int( dynamic_cast< CMenuEditable* >( pSelf )->CvarValue() );
+        EngFuncs::CvarSetValue( "rt_upscale_fsr2", float( val ) );
+        if( val != 0 )
+        {
+            EngFuncs::CvarSetValue( "rt_upscale_dlss", 0 );
+            EngFuncs::CvarSetValue( "rt_ef_vintage", 0 );
+        }
+    };
+    vintage.onCvarWrite = []( CMenuBaseItem* pSelf, void* pExtra ) {
+        int val = int( dynamic_cast< CMenuEditable* >( pSelf )->CvarValue() );
+        EngFuncs::CvarSetValue( "rt_ef_vintage", float( val ) );
+        if( val != 0 )
+        {
+            EngFuncs::CvarSetValue( "rt_upscale_dlss", 0 );
+            EngFuncs::CvarSetValue( "rt_upscale_fsr2", 0 );
+        }
+    };
+
+	/*static CStringArrayModel sharpeningModel( pSharpeningNames, std::size( pSharpeningNames ) );
 	sharpening.SetNameAndStatus("Sharpening", L("set sharpening to apply on top of image"));
 	sharpening.Setup(&sharpeningModel);
 	sharpening.SetCharSize(QM_SMALLFONT);
 	sharpening.LinkCvar("rt_sharpen", CMenuEditable::CVAR_VALUE);
-	sharpening.bUpdateImmediately = true;
+	sharpening.bUpdateImmediately = true;*/
+
+	static CStringArrayModel volumetricModel( pVolumetricNames, std::size( pVolumetricNames ) );
+	volumetric.SetNameAndStatus("Scattering", L("set scattering effects technique"));
+    volumetric.Setup( &volumetricModel );
+	volumetric.SetCharSize(QM_SMALLFONT);
+	volumetric.LinkCvar("rt_volume_type", CMenuEditable::CVAR_VALUE);
+    volumetric.bUpdateImmediately = true;
 
 
 	AddItem( background );
@@ -327,13 +351,19 @@ void CMenuVidModes::_Init( void )
 	AddItem( vidList );
     auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
 
+    AddItem( &classic );
+    AddItem( &vsync );
 #if SHOW_DLSS
 	AddItem( nvDlss );
 #endif
 	AddItem( amdFsr );
-	// AddItem( sharpening );
-
-	for (auto *pc : pCheckboxes)
+    AddItem( volumetric );
+    AddItem( vintage );
+    CMenuBaseItem* otherCheckboxes[] = {
+        &muzzleFlash, &nearestTextureFiltering,
+        //&particlesUntextured,
+    };
+	for (auto *pc : otherCheckboxes)
 	{
 		AddItem(pc);
 	}
@@ -345,44 +375,54 @@ void CMenuVidModes::_Init( void )
 		#define SPIN_W 300
 		#define SPIN_H 24
 		#define NUM_COLUMNS 2
-		auto GetX = [] (int j)   { return BASE_OFFSET_X + j * (SPIN_W + 72); };
-		auto GetY = [] (float i) { return (int)(230 + i * (SPIN_H * 2)); };
 
-		float i = 0;
+        auto GetX = []( int j ) {
+            return BASE_OFFSET_X + j * ( SPIN_W + 72 );
+        };
+        auto GetXSmall = []( int j ) {
+            return BASE_OFFSET_X + j * ( SPIN_W / 2 + 72 );
+        };
+        auto GetY = []( float i ) {
+            return ( int )( 230 + i * ( SPIN_H * 2 ) );
+        };
+
+        float i = 0;
 
 
-		// spin-controls
-		vidList.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H); applyBtn.SetCoord(	GetX(1), GetY(i - 0.05f));
-		i += 3.0f;
+        // spin-controls
+        vidList.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); applyBtn.SetCoord( GetX( 1 ), GetY( i - 0.05f ) );
+        i += 1.75f;
 		
+		classic.SetCoord( GetX( 0 ), GetY( i ) ); vsync.SetCoord( GetX( 1 ), GetY( i ) );
+        i += 2.0f;
+
 #if SHOW_DLSS
-		nvDlss.SetRect(		GetX(0), GetY(i), SPIN_W, SPIN_H); amdFsr	.SetRect(	GetX(1), GetY(i), SPIN_W, SPIN_H);
+        nvDlss.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); amdFsr.SetRect( GetX( 1 ), GetY( i ), SPIN_W, SPIN_H );
 #else
-		amdFsr	.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H);
+        amdFsr.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H );
 #endif
-		i += 2.5f;
+        i += 1.5f;
 
-		//sharpening.SetRect(	GetX(0), GetY(i), SPIN_W, SPIN_H);
-		//i += 1.5f;
+	    volumetric.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); vintage.SetRect( GetX( 1 ), GetY( i ), SPIN_W, SPIN_H );
+        i += 1.5f;
+
+        // switch-buttons
+        for( int k = 0; k < int( std::size( otherCheckboxes ) ); k++ )
+        {
+            if( k % NUM_COLUMNS == 0 && k != 0 )
+            {
+                i++;
+            }
+
+            otherCheckboxes[ k ]->SetCoord( GetXSmall( k % NUM_COLUMNS ), GetY( i ) );
+        }
 
 
-		// switch-buttons
-		for (int k = 0; k < (int)std::size(pCheckboxes); k++)
-		{
-			if (k % NUM_COLUMNS == 0 && k != 0)
-			{
-				i++;
-			}
-
-			pCheckboxes[k]->SetCoord(GetX(k % NUM_COLUMNS), GetY(i));
-		}
-
-
-		// back button
-		i += 2.0f;
-		doneBtn.SetCoord(GetX(0), GetY(i));
+        // back button
+        i += 2.0f;
+        doneBtn.SetCoord( GetX( 0 ), GetY( i ) );
 	}
-	// clang-format on
+    // clang-format on
 }
 
 void CMenuVidModes::_VidInit()
