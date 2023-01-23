@@ -186,14 +186,14 @@ public:
 	CMenuCheckBox			nearestTextureFiltering;
 	CMenuCheckBox			particlesUntextured;
 	CMenuCheckBox			classic;
-	CMenuCheckBox			twoBounces;
+    CMenuCheckBox           twoBounces;
+    CMenuCheckBox           volumetric;
 
 	CMenuVidModesModel		vidListModel;
 	CMenuSpinControl		vidList;
 
 	CMenuSpinControl		nvDlss;
 	CMenuSpinControl		amdFsr;
-    CMenuSpinControl        volumetric;
     CMenuSpinControl        vintage;
 };
 
@@ -269,7 +269,7 @@ void CMenuVidModes::_Init( void )
 	muzzleFlash.LinkCvar( "rt_mzlflash" );
 	muzzleFlash.bUpdateImmediately = true;
 
-	nearestTextureFiltering.SetNameAndStatus( L( "Vintage textures" ), L( "disable texture filtering" ) );
+	nearestTextureFiltering.SetNameAndStatus( L( "Pixelated textures" ), L( "disable texture filtering" ) );
 	nearestTextureFiltering.LinkCvar( "rt_texture_nearest" );
 	nearestTextureFiltering.bUpdateImmediately = true;
 
@@ -338,11 +338,16 @@ void CMenuVidModes::_Init( void )
 	sharpening.LinkCvar("rt_sharpen", CMenuEditable::CVAR_VALUE);
 	sharpening.bUpdateImmediately = true;*/
 
-	static CStringArrayModel volumetricModel( pVolumetricNames, std::size( pVolumetricNames ) );
-	volumetric.SetNameAndStatus("Scattering", L("set scattering effects technique"));
+	/*static CStringArrayModel volumetricModel( pVolumetricNames, std::size( pVolumetricNames ) );
+	volumetric.SetNameAndStatus("Scattering", L("set volumetric effects technique"));
     volumetric.Setup( &volumetricModel );
 	volumetric.SetCharSize(QM_SMALLFONT);
 	volumetric.LinkCvar("rt_volume_type", CMenuEditable::CVAR_VALUE);
+    volumetric.bUpdateImmediately = true;*/
+
+    volumetric.SetNameAndStatus( L( "Volumetrics" ),
+                              L( "set volumetric effects technique" ) );
+    volumetric.LinkCvar( "rt_volume_type" );
     volumetric.bUpdateImmediately = true;
 
 
@@ -350,31 +355,31 @@ void CMenuVidModes::_Init( void )
 	AddItem( banner );
 	AddItem( vidList );
     auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
-
-    AddItem( &classic );
-    AddItem( &vsync );
+    AddItem( vsync );
 #if SHOW_DLSS
 	AddItem( nvDlss );
 #endif
 	AddItem( amdFsr );
-    AddItem( volumetric );
+    AddItem( classic );
     AddItem( vintage );
-    CMenuBaseItem* otherCheckboxes[] = {
-        &muzzleFlash, &nearestTextureFiltering,
-        //&particlesUntextured,
+    std::vector< CMenuBaseItem* > checkboxes[] = {
+        { &volumetric },
+        { &muzzleFlash, &nearestTextureFiltering },
     };
-	for (auto *pc : otherCheckboxes)
-	{
-		AddItem(pc);
-	}
-
+    for( auto& line : checkboxes )
+    {
+        for( CMenuBaseItem* pc : line )
+        {
+            AddItem( pc );
+        }
+    }
     auto& doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
-	
-	// clang-format off
+
+
 	{
+	    // clang-format off
 		#define SPIN_W 300
 		#define SPIN_H 24
-		#define NUM_COLUMNS 2
 
         auto GetX = []( int j ) {
             return BASE_OFFSET_X + j * ( SPIN_W + 72 );
@@ -390,10 +395,10 @@ void CMenuVidModes::_Init( void )
 
 
         // spin-controls
-        vidList.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); applyBtn.SetCoord( GetX( 1 ), GetY( i - 0.05f ) );
-        i += 1.75f;
-		
-		classic.SetCoord( GetX( 0 ), GetY( i ) ); vsync.SetCoord( GetX( 1 ), GetY( i ) );
+        vidList.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); vsync.SetCoord( GetX( 1 ), GetY( i - 0.1f ) );
+        i += 1.0f;
+
+		applyBtn.SetCoord( GetX( 0 ), GetY( i - 0.05f ) );
         i += 2.0f;
 
 #if SHOW_DLSS
@@ -402,27 +407,26 @@ void CMenuVidModes::_Init( void )
         amdFsr.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H );
 #endif
         i += 1.5f;
+	    classic.SetCoord( GetX( 0 ), GetY( i ) ); vintage.SetRect( GetX( 1 ), GetY( i + 0.1f ), SPIN_W, SPIN_H );
+        i += 1.25f;
+        // clang-format on
 
-	    volumetric.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); vintage.SetRect( GetX( 1 ), GetY( i ), SPIN_W, SPIN_H );
-        i += 1.5f;
 
         // switch-buttons
-        for( int k = 0; k < int( std::size( otherCheckboxes ) ); k++ )
+        for( auto& line : checkboxes )
         {
-            if( k % NUM_COLUMNS == 0 && k != 0 )
+            for( int x = 0; x < int( line.size() ); x++ )
             {
-                i++;
+                line[ x ]->SetCoord( GetXSmall( x ), GetY( i ) );
             }
-
-            otherCheckboxes[ k ]->SetCoord( GetXSmall( k % NUM_COLUMNS ), GetY( i ) );
+            i += 1.25f;
         }
 
 
         // back button
-        i += 2.0f;
+        i += 0.5f;
         doneBtn.SetCoord( GetX( 0 ), GetY( i ) );
 	}
-    // clang-format on
 }
 
 void CMenuVidModes::_VidInit()
