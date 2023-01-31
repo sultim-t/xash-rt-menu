@@ -188,6 +188,7 @@ public:
 	CMenuCheckBox			classic;
     CMenuCheckBox           twoBounces;
     CMenuCheckBox           volumetric;
+    CMenuCheckBox           bloom;
 
 	CMenuVidModesModel		vidListModel;
 	CMenuSpinControl		vidList;
@@ -281,6 +282,10 @@ void CMenuVidModes::_Init( void )
     classic.LinkCvar( "rt_classic" );
     classic.bUpdateImmediately = true;
 
+    bloom.SetNameAndStatus( L( "Bloom" ), L( "enable blooming" ) );
+    bloom.LinkCvar( "rt_bloom" );
+    bloom.bUpdateImmediately = true;
+
 
 	static CStringArrayModel nvDlssModel( pNvDlssNames, std::size( pNvDlssNames ) );
 	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
@@ -363,7 +368,7 @@ void CMenuVidModes::_Init( void )
     AddItem( classic );
     AddItem( vintage );
     std::vector< CMenuBaseItem* > checkboxes[] = {
-        { &volumetric },
+        { &volumetric, &bloom },
         { &muzzleFlash, &nearestTextureFiltering },
     };
     for( auto& line : checkboxes )
