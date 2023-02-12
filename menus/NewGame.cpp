@@ -196,6 +196,9 @@ void CMenuNewGame::TryAddHazardCourse()
 	{
 		hzrd->SetGrayed(true);
 	}
+	
+    // HACKHACK: disable hazard course for the initial version
+    hzrd->SetGrayed( true );
 }
 #endif
 
