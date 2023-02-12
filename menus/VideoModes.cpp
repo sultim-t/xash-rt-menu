@@ -270,7 +270,7 @@ void CMenuVidModes::_Init( void )
 	muzzleFlash.LinkCvar( "rt_mzlflash" );
 	muzzleFlash.bUpdateImmediately = true;
 
-	nearestTextureFiltering.SetNameAndStatus( L( "Pixelated textures" ), L( "disable texture filtering" ) );
+	nearestTextureFiltering.SetNameAndStatus( L( "Pixel textures" ), L( "disable texture filtering" ) );
 	nearestTextureFiltering.LinkCvar( "rt_texture_nearest" );
 	nearestTextureFiltering.bUpdateImmediately = true;
 
@@ -288,7 +288,7 @@ void CMenuVidModes::_Init( void )
 
 
 	static CStringArrayModel nvDlssModel( pNvDlssNames, std::size( pNvDlssNames ) );
-	nvDlss.SetNameAndStatus("NVIDIA DLSS 2", L("set Nvidia DLSS"));
+	nvDlss.SetNameAndStatus("NVIDIA DLSS", L("set Nvidia DLSS"));
 	nvDlss.Setup(&nvDlssModel);
 	nvDlss.SetCharSize(QM_SMALLFONT);
 	nvDlss.LinkCvar("rt_upscale_dlss", CMenuEditable::CVAR_VALUE);
@@ -336,20 +336,6 @@ void CMenuVidModes::_Init( void )
         }
     };
 
-	/*static CStringArrayModel sharpeningModel( pSharpeningNames, std::size( pSharpeningNames ) );
-	sharpening.SetNameAndStatus("Sharpening", L("set sharpening to apply on top of image"));
-	sharpening.Setup(&sharpeningModel);
-	sharpening.SetCharSize(QM_SMALLFONT);
-	sharpening.LinkCvar("rt_sharpen", CMenuEditable::CVAR_VALUE);
-	sharpening.bUpdateImmediately = true;*/
-
-	/*static CStringArrayModel volumetricModel( pVolumetricNames, std::size( pVolumetricNames ) );
-	volumetric.SetNameAndStatus("Scattering", L("set volumetric effects technique"));
-    volumetric.Setup( &volumetricModel );
-	volumetric.SetCharSize(QM_SMALLFONT);
-	volumetric.LinkCvar("rt_volume_type", CMenuEditable::CVAR_VALUE);
-    volumetric.bUpdateImmediately = true;*/
-
     volumetric.SetNameAndStatus( L( "Volumetrics" ),
                               L( "set volumetric effects technique" ) );
     volumetric.LinkCvar( "rt_volume_type" );
@@ -368,8 +354,7 @@ void CMenuVidModes::_Init( void )
     AddItem( classic );
     AddItem( vintage );
     std::vector< CMenuBaseItem* > checkboxes[] = {
-        { &volumetric, &bloom },
-        { &muzzleFlash, &nearestTextureFiltering },
+        { &bloom, &muzzleFlash, &nearestTextureFiltering },
     };
     for( auto& line : checkboxes )
     {
@@ -378,7 +363,7 @@ void CMenuVidModes::_Init( void )
             AddItem( pc );
         }
     }
-    auto& doneBtn  = *AddButton( L( "Done" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
+    auto& doneBtn  = *AddButton( L( "Back" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
 
 
 	{
