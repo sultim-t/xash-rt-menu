@@ -168,7 +168,7 @@ public:
 
 	void SetMode( int mode );
 	void SetMode( int w, int h );
-    void TrySetChosenVidMode();
+    void ApplyAndReturnBack();
 	
 	int Vid_GetCurrentVidModeIndex()
 	{
@@ -184,11 +184,11 @@ public:
 	CMenuCheckBox			vsync;
 	CMenuCheckBox			muzzleFlash;
 	CMenuCheckBox			nearestTextureFiltering;
-	CMenuCheckBox			particlesUntextured;
 	CMenuCheckBox			classic;
-    CMenuCheckBox           twoBounces;
-    CMenuCheckBox           volumetric;
-    CMenuCheckBox           bloom;
+	CMenuCheckBox			noServerVis;
+	CMenuCheckBox			volumetric;
+	CMenuCheckBox			bloom;
+	CMenuCheckBox			dirt;
 
 	CMenuVidModesModel		vidListModel;
 	CMenuSpinControl		vidList;
@@ -220,7 +220,7 @@ void CMenuVidModes::SetMode( int mode )
 UI_VidModes_SetConfig
 =================
 */
-void CMenuVidModes::TrySetChosenVidMode()
+void CMenuVidModes::ApplyAndReturnBack()
 {
 	// NOTE: don't call this function frequently,
 	// as there are no checks that width/height are the same
@@ -230,6 +230,8 @@ void CMenuVidModes::TrySetChosenVidMode()
 	SetMode( modeIndex );
     EngFuncs::CvarSetValue( "vid_mode", modeIndex );
     Vid_SetCurrentVidModeIndex( modeIndex );
+
+	Hide();
 }
 
 void CMenuVidModes::Draw()
@@ -242,6 +244,9 @@ void CMenuVidModes::Draw()
 	amdFsr.UpdateCvar();
     nvDlss.UpdateCvar();
 	vintage.UpdateCvar();
+
+	const int bloomActive = ( int )EngFuncs::GetCvarFloat( "rt_bloom" );
+    dirt.SetGrayed( !bloomActive );
 
 	CMenuFramework::Draw();
 }
@@ -274,9 +279,9 @@ void CMenuVidModes::_Init( void )
 	nearestTextureFiltering.LinkCvar( "rt_texture_nearest" );
 	nearestTextureFiltering.bUpdateImmediately = true;
 
-	particlesUntextured.SetNameAndStatus( L( "Vintage particles" ), L( "use squares for particles" ) );
-	particlesUntextured.LinkCvar( "rt_particles_notex" );
-	particlesUntextured.bUpdateImmediately = true;
+	noServerVis.SetNameAndStatus( L( "No server cull" ), L( "WARNING: CAN SIGNIFICANTLY REDUCE THE PERFORMANCE\nif true, server->client messages are not culled (i.e. some objects will not pop up)\n" ) );
+	noServerVis.LinkCvar( "sv_novis" );
+	noServerVis.bUpdateImmediately = true;
 
     classic.SetNameAndStatus( L( "Classic lighting" ), L( "don't use ray tracing for illumination" ) );
     classic.LinkCvar( "rt_classic" );
@@ -285,6 +290,10 @@ void CMenuVidModes::_Init( void )
     bloom.SetNameAndStatus( L( "Bloom" ), L( "enable blooming" ) );
     bloom.LinkCvar( "rt_bloom" );
     bloom.bUpdateImmediately = true;
+
+    dirt.SetNameAndStatus( L( "Lens dirt" ), L( "should Gordon not be distracted by cleaning his glasses?" ) );
+    dirt.LinkCvar( "rt_bloom_dirt_enable" );
+    dirt.bUpdateImmediately = true;
 
 
 	static CStringArrayModel nvDlssModel( pNvDlssNames, std::size( pNvDlssNames ) );
@@ -345,7 +354,6 @@ void CMenuVidModes::_Init( void )
 	AddItem( background );
 	AddItem( banner );
 	AddItem( vidList );
-    auto& applyBtn = *AddButton( L( "Apply" ), L( "Apply window size" ), PC_ACTIVATE, VoidCb( &CMenuVidModes::TrySetChosenVidMode ) );
     AddItem( vsync );
 #if SHOW_DLSS
 	AddItem( nvDlss );
@@ -354,7 +362,8 @@ void CMenuVidModes::_Init( void )
     AddItem( classic );
     AddItem( vintage );
     std::vector< CMenuBaseItem* > checkboxes[] = {
-        { &bloom, &muzzleFlash, &nearestTextureFiltering },
+        { &nearestTextureFiltering, &muzzleFlash, &noServerVis },
+        { &bloom, &dirt },
     };
     for( auto& line : checkboxes )
     {
@@ -363,7 +372,10 @@ void CMenuVidModes::_Init( void )
             AddItem( pc );
         }
     }
-    auto& doneBtn  = *AddButton( L( "Back" ), L( "Return back to previous menu" ), PC_DONE, VoidCb( &CMenuVidModes::Hide ) );
+    auto& doneBtn = *AddButton( L( "Done" ),
+                                L( "Apply and return back to a previous menu" ),
+                                PC_DONE,
+                                VoidCb( &CMenuVidModes::ApplyAndReturnBack ) );
 
 
 	{
@@ -386,9 +398,6 @@ void CMenuVidModes::_Init( void )
 
         // spin-controls
         vidList.SetRect( GetX( 0 ), GetY( i ), SPIN_W, SPIN_H ); vsync.SetCoord( GetX( 1 ), GetY( i - 0.1f ) );
-        i += 1.0f;
-
-		applyBtn.SetCoord( GetX( 0 ), GetY( i - 0.05f ) );
         i += 2.0f;
 
 #if SHOW_DLSS
@@ -398,7 +407,7 @@ void CMenuVidModes::_Init( void )
 #endif
         i += 1.5f;
 	    classic.SetCoord( GetX( 0 ), GetY( i ) ); vintage.SetRect( GetX( 1 ), GetY( i + 0.1f ), SPIN_W, SPIN_H );
-        i += 1.25f;
+        i += 1.5f;
         // clang-format on
 
 
