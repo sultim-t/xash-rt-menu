@@ -362,7 +362,7 @@ void CMenuVidModes::_Init( void )
     AddItem( classic );
     AddItem( vintage );
     std::vector< CMenuBaseItem* > checkboxes[] = {
-        { &nearestTextureFiltering, &muzzleFlash, &noServerVis },
+        { &nearestTextureFiltering, &muzzleFlash /*, &noServerVis*/ },
         { &bloom, &dirt },
     };
     for( auto& line : checkboxes )
